@@ -1,0 +1,318 @@
+from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.decorators import api_view,permission_classes
+from rest_framework.permissions import IsAdminUser
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.urls import reverse
+from django.core.mail import send_mail
+from django.utils import timezone
+from datetime import datetime, timedelta
+from .models import VisitorProfile, User
+from .serializers import UserAdminSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
+from django.shortcuts import get_object_or_404
+from .models import BusinessProfile, GalleryImage, Sale
+from .serializers import BusinessProfileSerializer, GalleryImageSerializer, SaleSerializer
+from rest_framework import viewsets, permissions
+
+
+from .serializers import (
+    VisitorRegisterSerializer,
+    BusinessRegisterSerializer,
+    VisitorProfileSerializer,
+    CustomVisitorTokenSerializer,
+    CustomBusinessTokenSerializer,
+    CustomAdminTokenSerializer,
+)
+
+
+class VisitorRegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = VisitorRegisterSerializer
+    permission_classes = [AllowAny]
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        user.is_active = False
+        user.save()
+        self.send_verification_email(user)
+
+    def send_verification_email(self, user):
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        verification_url = self.request.build_absolute_uri(
+            reverse('verify-email', kwargs={'uidb64': uid, 'token': token})
+        )
+        send_mail(
+            subject='Verify Your Email Address',
+            message=f'Click the link below to verify your email:\n{verification_url}',
+            from_email='noreply@jaffaexplorer.com',
+            recipient_list=[user.email],
+        )
+
+
+class BusinessRegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = BusinessRegisterSerializer
+    permission_classes = [AllowAny]
+
+
+class VerifyEmailView(APIView):
+    def get(self, request, uidb64, token):
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return Response({'message': 'Email verified successfully!'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class VisitorLoginView(TokenObtainPairView):
+    permission_classes = [AllowAny]
+    serializer_class = CustomVisitorTokenSerializer
+
+
+class BusinessLoginView(TokenObtainPairView):
+    serializer_class = CustomBusinessTokenSerializer
+
+
+class VisitorProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get(self, request):
+        try:
+            profile = VisitorProfile.objects.get(user=request.user)
+            serializer = VisitorProfileSerializer(profile, context={'request': request})
+            return Response(serializer.data)
+        except VisitorProfile.DoesNotExist:
+            return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    def put(self, request):
+        try:
+            profile = VisitorProfile.objects.get(user=request.user)
+            serializer = VisitorProfileSerializer(profile, data=request.data, partial=True, context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except VisitorProfile.DoesNotExist:
+            return Response({"detail": "Profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def get_all_users(request):
+    users = User.objects.all()
+    serializer = UserAdminSerializer(users, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def ban_user(request, user_id):
+    try:
+        user = User.objects.get(pk=user_id)
+        user.is_banned_until = datetime.now() + timedelta(days=30)
+        user.save()
+
+        send_mail(
+            subject="Account Banned",
+            message=f"Your account has been banned for 30 days. You can log back in on {user.is_banned_until.strftime('%Y-%m-%d')}.",
+            from_email="jaffaexplorer@gmail.com",
+            recipient_list=[user.email],
+        )
+
+        return Response({"detail": "User banned for 30 days."})
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def unban_user(request, user_id):
+    try:
+        user = get_object_or_404(User, id=user_id)
+        user.is_banned_until = None
+        user.save()
+
+        send_mail(
+            subject="Account Unbanned",
+            message="Your account has been unbanned. You may now log in again.",
+            from_email="noreply@jaffaexplorer.com",
+            recipient_list=[user.email],
+        )
+
+        return Response({'detail': 'User unbanned successfully.'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=400)
+    
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def delete_user(request, user_id):
+    try:
+        user = User.objects.get(id=user_id)
+        user.delete()
+        return Response({'message': 'User deleted'})
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def approve_business(request, user_id):
+    try:
+        user = User.objects.get(id=user_id, is_business=True)
+        user.is_approved = True
+        user.is_active = True 
+        user.save()
+
+        send_mail(
+            subject="Business Account Approved",
+            message="Your business account has been approved. You can now log in and access the system.",
+            from_email="noreply@jaffaexplorer.com",
+            recipient_list=[user.email],
+        )
+
+        return Response({'message': 'Business account approved'})
+    except User.DoesNotExist:
+        return Response({'error': 'Business not found'}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def decline_business(request, user_id):
+    try:
+        user = User.objects.get(id=user_id, is_business=True)
+        user.delete()
+        send_mail(
+            subject="Business Account Decline",
+            message="Your business account has been Declined. You can send us email to contact.",
+            from_email="noreply@jaffaexplorer.com",
+            recipient_list=[user.email],
+        )
+        return Response({'message': 'Business account declined and deleted'})
+    except User.DoesNotExist:
+        return Response({'error': 'Business not found'}, status=404)
+    
+from rest_framework.views import APIView
+
+class AdminLoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+        user = authenticate(request, email=email, password=password)
+
+        if user is not None and user.is_admin:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+        return Response({"detail": "Invalid credentials or not an admin."}, status=400)
+
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        try:
+            user = User.objects.get(email=email)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_link = f"http://localhost:3000/reset-password/{uid}/{token}/"
+            
+            send_mail(
+                subject="Password Reset - Jaffa Explorer",
+                message=f"Click the link to reset your password:\n{reset_link}",
+                from_email="noreply@jaffaexplorer.com",
+                recipient_list=[user.email],
+            )
+            return Response({"detail": "Password reset link sent."})
+        except User.DoesNotExist:
+            return Response({"error": "User not found."}, status=404)
+        
+
+class ResetPasswordView(APIView):
+    def post(self, request, uidb64, token):
+        password = request.data.get("password")
+        password2 = request.data.get("password2")
+
+        if password != password2:
+            return Response({"error": "Passwords do not match."}, status=400)
+
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = User.objects.get(pk=uid)
+
+            if not default_token_generator.check_token(user, token):
+                return Response({"error": "Invalid or expired token."}, status=400)
+
+            user.set_password(password)
+            user.save()
+            return Response({"message": "Password has been reset successfully."})
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)        
+        
+class BusinessProfileViewSet(viewsets.ModelViewSet):
+    queryset = BusinessProfile.objects.all()
+    serializer_class = BusinessProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class GalleryImageViewSet(viewsets.ModelViewSet):
+    serializer_class = GalleryImageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return GalleryImage.objects.filter(business__user=self.request.user)
+
+    def perform_create(self, serializer):
+        business = self.request.user.businessprofile
+        serializer.save(business=business)
+
+
+class SaleViewSet(viewsets.ModelViewSet):
+    queryset = Sale.objects.all()
+    serializer_class = SaleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Sale.objects.filter(business__user=self.request.user)
+
+    def perform_create(self, serializer):
+        business_profile = self.request.user.businessprofile  
+        serializer.save(business=business_profile)
+
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_sale(request, pk):
+    sale = get_object_or_404(Sale, pk=pk, business__user=request.user)
+    sale.delete()
+    return Response({'message': 'Sale deleted'})
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_image(request, pk):
+    img = get_object_or_404(GalleryImage, pk=pk, business__user=request.user)
+    img.delete()
+    return Response({'message': 'Image deleted'})        
