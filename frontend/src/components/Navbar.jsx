@@ -1,0 +1,170 @@
+import React, { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+
+const Navbar = ({ changeLanguage }) => {
+  const { t, i18n } = useTranslation();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [dir, setDir] = useState("ltr");
+  const [showRegisterDropdown, setShowRegisterDropdown] = useState(false);
+  const [showLoginDropdown, setShowLoginDropdown] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState("");
+
+  // Update document direction based on language
+  useEffect(() => {
+    const lang = i18n.language;
+    const direction = lang === "ar" || lang === "he" ? "rtl" : "ltr";
+    setDir(direction);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = direction;
+  }, [i18n.language]);
+
+  // Check which user is authenticated
+  useEffect(() => {
+    const visitorToken = localStorage.getItem("visitorAccessToken");
+    const businessToken = localStorage.getItem("businessAccessToken");
+    const adminToken = localStorage.getItem("adminAccessToken");
+
+    if (adminToken) {
+      setIsAuthenticated(true);
+      setUserRole("admin");
+    } else if (businessToken) {
+      setIsAuthenticated(true);
+      setUserRole("business");
+    } else if (visitorToken) {
+      setIsAuthenticated(true);
+      setUserRole("visitor");
+    } else {
+      setIsAuthenticated(false);
+      setUserRole("");
+    }
+  }, [location.pathname]);
+
+  // Logout handler
+  const handleLogout = () => {
+    localStorage.clear();
+    setIsAuthenticated(false);
+    setUserRole("");
+    navigate("/");
+  };
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest(".dropdown")) {
+        setShowRegisterDropdown(false);
+        setShowLoginDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  return (
+    <nav dir={dir} className="bg-white shadow-md px-6 py-4 flex justify-between items-center relative z-50">
+      <Link to="/" className="text-xl font-bold text-blue-700">
+        {t("brand") || "Jaffa Explorer"}
+      </Link>
+
+      <ul className="hidden md:flex space-x-6 font-medium">
+        <li><a href="#home" className="hover:text-blue-600">{t("nav.home")}</a></li>
+        <li><a href="#map" className="hover:text-blue-600">{t("nav.map")}</a></li>
+        <li><a href="#restaurants" className="hover:text-blue-600">{t("nav.restaurants")}</a></li>
+        <li><a href="#attractions" className="hover:text-blue-600">{t("nav.attractions")}</a></li>
+        <li><a href="#events" className="hover:text-blue-600">{t("nav.events")}</a></li>
+        <li><a href="#about" className="hover:text-blue-600">{t("nav.about")}</a></li>
+        <li><a href="#contact" className="hover:text-blue-600">{t("nav.contact")}</a></li>
+      </ul>
+
+      <div className="flex items-center space-x-4">
+        {!isAuthenticated ? (
+          <>
+            {/* Register Dropdown */}
+            <div className="relative dropdown">
+              <button
+                onClick={() => {
+                  setShowRegisterDropdown(!showRegisterDropdown);
+                  setShowLoginDropdown(false);
+                }}
+                className="text-blue-700 hover:underline"
+              >
+                {t("auth.register")}
+              </button>
+              {showRegisterDropdown && (
+                <div className="absolute right-0 mt-2 w-40 bg-white shadow-md border rounded z-50">
+                  <Link to="/register/visitor" className="block px-4 py-2 hover:bg-gray-100">
+                    {t("auth.registerVisitor")}
+                  </Link>
+                  <Link to="/register/business" className="block px-4 py-2 hover:bg-gray-100">
+                    {t("auth.registerBusiness")}
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* Login Dropdown */}
+            <div className="relative dropdown">
+              <button
+                onClick={() => {
+                  setShowLoginDropdown(!showLoginDropdown);
+                  setShowRegisterDropdown(false);
+                }}
+                className="text-blue-700 hover:underline"
+              >
+                {t("auth.login")}
+              </button>
+              {showLoginDropdown && (
+                <div className="absolute right-0 mt-2 w-40 bg-white shadow-md border rounded z-50">
+                  <Link to="/login/visitor" className="block px-4 py-2 hover:bg-gray-100">
+                    {t("auth.loginVisitor")}
+                  </Link>
+                  <Link to="/login/business" className="block px-4 py-2 hover:bg-gray-100">
+                    {t("auth.loginBusiness")}
+                  </Link>
+                  <Link to="/login/admin" className="block px-4 py-2 hover:bg-gray-100 text-red-600">
+                    Admin Login
+                  </Link>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Authenticated user profile link */}
+            {userRole === "admin" && (
+              <Link to="/admin" className="text-blue-700 hover:underline">
+                Admin Panel
+              </Link>
+            )}
+            {userRole === "business" && (
+              <Link to="/profile/business" className="text-blue-700 hover:underline">
+                Business Profile
+              </Link>
+            )}
+            {userRole === "visitor" && (
+              <Link to="/profile/visitor" className="text-blue-700 hover:underline">
+                {t("auth.profile") || "Visitor Profile"}
+              </Link>
+            )}
+
+            <button onClick={handleLogout} className="text-red-600 hover:underline">
+              {t("auth.logout") || "Logout"}
+            </button>
+          </>
+        )}
+
+        {/* Language Switch */}
+        <div className="space-x-1 text-sm">
+          <button onClick={() => changeLanguage("en")}>EN</button>
+          <button onClick={() => changeLanguage("he")}>HE</button>
+          <button onClick={() => changeLanguage("ar")}>AR</button>
+        </div>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;

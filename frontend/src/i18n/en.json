@@ -1,0 +1,49 @@
+{
+  "brand": "Jaffa Explorer",
+  "nav": {
+    "home": "Home",
+    "map": "Map",
+    "restaurants": "Restaurants",
+    "attractions": "Attractions",
+    "events": "Events",
+    "about": "About Us",
+    "contact": "Contact Us"
+  },
+  "hero": {
+    "title": "Discover the magic of Jaffa-Tel Aviv",
+    "subtitle": "Explore the history, restaurants, and events of one of the most vibrant cities in the world.",
+    "button": "Explore the map"
+  },
+  "auth": {
+    "register": "Register",
+    "login": "Login",
+    "registerVisitor": "Visitor Register",
+    "registerBusiness": "Business Register",
+    "loginVisitor": "Visitor Login",
+    "loginBusiness": "Business Login",
+    "username": "Username",
+    "email": "Email",
+    "phone": "Phone Number",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "passwordMismatch": "Passwords do not match.",
+    "registerError": "Registration failed. Please try again.",
+    "serverError": "A server error occurred. Please try again later."
+  },
+  "register": {
+    "title": "Visitor Registration",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "button": "Register",
+    "success": "✅ Registration successful! Please check your email to verify.",
+    "error": "❌ Error:",
+    "failed": "Registration failed"
+  },
+  "home": {
+    "title": "Discover the Charm of Jaffa - Tel Aviv",
+    "subtitle": "Explore history, restaurants, and events in one of the most magical coastal cities.",
+    "button": "View Map"
+  }
+}
