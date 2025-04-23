@@ -1,9 +1,30 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-  content: [],
+  content: [
+    "./src/**/*.{js,jsx,ts,tsx}", 
+    "./public/index.html"
+  ],
+  darkMode: 'class', 
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        base: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Oxygen',
+          'Ubuntu',
+          'Cantarell',
+          'Fira Sans',
+          'Droid Sans',
+          'Helvetica Neue',
+          'sans-serif',
+        ],
+      },
+    },
   },
-  plugins: [],
-}
-
+  plugins: [
+    require('tailwindcss-rtl'), 
+  ],
+};
