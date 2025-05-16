@@ -13,7 +13,6 @@ const Navbar = ({ changeLanguage }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState("");
 
-  // Update document direction based on language
   useEffect(() => {
     const lang = i18n.language;
     const direction = lang === "ar" || lang === "he" ? "rtl" : "ltr";
@@ -22,7 +21,6 @@ const Navbar = ({ changeLanguage }) => {
     document.documentElement.dir = direction;
   }, [i18n.language]);
 
-  // Check which user is authenticated
   useEffect(() => {
     const visitorToken = localStorage.getItem("visitorAccessToken");
     const businessToken = localStorage.getItem("businessAccessToken");
@@ -43,7 +41,6 @@ const Navbar = ({ changeLanguage }) => {
     }
   }, [location.pathname]);
 
-  // Logout handler
   const handleLogout = () => {
     localStorage.clear();
     setIsAuthenticated(false);
@@ -51,7 +48,6 @@ const Navbar = ({ changeLanguage }) => {
     navigate("/");
   };
 
-  // Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest(".dropdown")) {
@@ -76,7 +72,10 @@ const Navbar = ({ changeLanguage }) => {
         <li><a href="#attractions" className="hover:text-blue-600">{t("nav.attractions")}</a></li>
         <li><a href="#events" className="hover:text-blue-600">{t("nav.events")}</a></li>
         <li><a href="#about" className="hover:text-blue-600">{t("nav.about")}</a></li>
-        <li><a href="#contact" className="hover:text-blue-600">{t("nav.contact")}</a></li>
+        <li>
+          <Link to="/contact" className="hover:text-blue-600">
+            {t("nav.contact")}
+          </Link></li>
       </ul>
 
       <div className="flex items-center space-x-4">

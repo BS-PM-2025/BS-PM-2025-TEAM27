@@ -8,7 +8,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.conf import settings
 from accounts.models import VisitorProfile, BusinessProfile, User
 from datetime import timedelta
-from .models import BusinessProfile, GalleryImage, Sale
+from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
 
 
 class VisitorRegisterSerializer(serializers.ModelSerializer):
@@ -237,3 +237,9 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessProfile
         fields = ['id', 'business_name', 'description', 'category', 'phone', 'location', 'profile_image', 'gallery_images', 'sales']
+
+
+class ContactMessageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactMessage
+        fields = ['id', 'subject', 'message', 'created_at']

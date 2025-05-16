@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth import get_user_model
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -12,9 +14,8 @@ class User(AbstractUser):
     is_business = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
 
-    # Ban and approval logic
     is_banned_until = models.DateTimeField(null=True, blank=True)
-    is_approved = models.BooleanField(default=True)  # Set False initially for business accounts
+    is_approved = models.BooleanField(default=True)  
 
     ROLE_CHOICES = (
         ('visitor', 'Visitor'),
@@ -79,3 +80,12 @@ class Sale(models.Model):
 
     def __str__(self):
         return f"Sale: {self.title} ({self.business.business_name})"
+
+class ContactMessage(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message from {self.user.email} - {self.subject}"

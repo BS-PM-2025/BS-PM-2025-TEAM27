@@ -18,10 +18,10 @@ from .serializers import UserAdminSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
-from .models import BusinessProfile, GalleryImage, Sale
-from .serializers import BusinessProfileSerializer, GalleryImageSerializer, SaleSerializer
+from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
+from .serializers import BusinessProfileSerializer, GalleryImageSerializer, SaleSerializer,ContactMessageSerializer
 from rest_framework import viewsets, permissions
-
+from django.conf import settings
 
 from .serializers import (
     VisitorRegisterSerializer,
@@ -316,3 +316,19 @@ def delete_image(request, pk):
     img = get_object_or_404(GalleryImage, pk=pk, business__user=request.user)
     img.delete()
     return Response({'message': 'Image deleted'})        
+
+
+class ContactUsView(generics.CreateAPIView):
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        message = serializer.save(user=self.request.user)
+
+        send_mail(
+            subject=f"[Contact Us] {message.subject}",
+            message=f"From: {self.request.user.get_full_name()} <{self.request.user.email}>\n\n{message.message}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.ADMIN_EMAIL],
+        )

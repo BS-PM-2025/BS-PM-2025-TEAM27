@@ -14,6 +14,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import HomePage from "./pages/HomePage";
 import BusinessProfile from './pages/BusinessProfile';
+import ContactUs from './pages/ContactUs';
 
 function App() {
   const { i18n } = useTranslation();
@@ -40,7 +41,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:uidb64/:token" element={<ResetPassword />} />
           <Route path="/profile/business" element={<BusinessProfile />} />
-
+          <Route path="/contact" element={<ContactUs />} />
         </Routes>
       </div>
     </Router>

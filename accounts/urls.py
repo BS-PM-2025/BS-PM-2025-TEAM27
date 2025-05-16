@@ -21,6 +21,7 @@ from .views import (
     ResetPasswordView,
     delete_sale,
     delete_image,
+    ContactUsView,
 )
 
 from rest_framework_simplejwt.views import TokenRefreshView
@@ -48,7 +49,7 @@ urlpatterns = [
     path('admin/users/<int:user_id>/delete/', delete_user, name='delete-user'),
     path('admin/business/<int:user_id>/approve/', approve_business, name='approve-business'),
     path('admin/business/<int:user_id>/decline/', decline_business, name='decline-business'),
-
+    path('contact/', ContactUsView.as_view(), name='contact'),
     path('password/forgot/', ForgotPasswordView.as_view(), name='password-forgot'),
     path('password/reset/<uidb64>/<token>/', ResetPasswordView.as_view(), name='password-reset'),
 ]
