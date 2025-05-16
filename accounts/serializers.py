@@ -37,6 +37,7 @@ class VisitorRegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
             is_visitor=True,
             is_active=False,
+            role='visitor',
         )
 
         VisitorProfile.objects.create(

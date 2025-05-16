@@ -6,5 +6,7 @@ class CustomUserAdmin(UserAdmin):
     model = User
     list_display = ('username', 'email', 'role', 'is_active')
     list_filter = ('role', 'is_active', 'is_staff')
-
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ('Custom Fields', {'fields': ('role',)}),
+    )
 admin.site.register(User, CustomUserAdmin)
