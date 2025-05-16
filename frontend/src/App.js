@@ -15,6 +15,11 @@ import ResetPassword from "./pages/ResetPassword";
 import HomePage from "./pages/HomePage";
 import BusinessProfile from './pages/BusinessProfile';
 import ContactUs from './pages/ContactUs';
+import CreatePost from './pages/CreatePost';
+import PostFeed from './pages/PostFeed';
+import EditPost from './pages/EditPost';
+import VerifySuccess from './pages/VerifySuccess';
+import VerifyFailed from './pages/VerifyFailed';
 
 function App() {
   const { i18n } = useTranslation();
@@ -40,8 +45,13 @@ function App() {
           <Route path="/login/admin" element={<AdminLogin />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:uidb64/:token" element={<ResetPassword />} />
+          <Route path="/verify-success" element={<VerifySuccess />} />
+          <Route path="/verify-failed" element={<VerifyFailed />} />
           <Route path="/profile/business" element={<BusinessProfile />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="/create-post" element={<CreatePost />} />
+          <Route path="/feed" element={<PostFeed />} />
+          <Route path="/edit-post/:id" element={<EditPost />} />
         </Routes>
       </div>
     </Router>

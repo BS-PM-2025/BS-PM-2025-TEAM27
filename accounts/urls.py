@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     BusinessLoginView,
     VisitorRegisterView,
@@ -22,15 +23,29 @@ from .views import (
     delete_sale,
     delete_image,
     ContactUsView,
+    ContactMessageDeleteView,
+    ContactMessageListView,
+    PostListCreateView,
+    PostDetailView,
+    LikePostView,
+    CommentCreateView,
+    ReportPostView, 
+    ReportedPostsListView,
+    PostViewSet, 
+    CommentViewSet,
+    reported_posts_view,
+    delete_reported_post,
+    ignore_report
 )
 
-from rest_framework_simplejwt.views import TokenRefreshView
 
 router = DefaultRouter()
 router.register(r'profile/business', BusinessProfileViewSet, basename='business-profile')
 router.register(r'gallery-images', GalleryImageViewSet, basename='gallery-image')
 router.register(r'profile/business/sales', SaleViewSet, basename='business-sale')
 router.register(r'sales', SaleViewSet, basename='sale')
+router.register(r'posts', PostViewSet, basename='posts')
+router.register(r'comments', CommentViewSet, basename='comments')
 
 urlpatterns = [
     path('register/visitor/', VisitorRegisterView.as_view(), name='visitor-register'),
@@ -52,6 +67,18 @@ urlpatterns = [
     path('contact/', ContactUsView.as_view(), name='contact'),
     path('password/forgot/', ForgotPasswordView.as_view(), name='password-forgot'),
     path('password/reset/<uidb64>/<token>/', ResetPasswordView.as_view(), name='password-reset'),
+    path('admin/contact-messages/', ContactMessageListView.as_view(), name='admin-contact-messages'),
+    path('admin/contact-messages/<int:pk>/delete/', ContactMessageDeleteView.as_view(), name='admin-delete-contact'),
+    path('posts/', PostListCreateView.as_view()),
+    path('posts/<int:pk>/', PostDetailView.as_view()),
+    path('posts/<int:pk>/like/', LikePostView.as_view()),
+    path('posts/<int:pk>/comment/', CommentCreateView.as_view()),
+    path('posts/<int:pk>/report/', ReportPostView.as_view()),
+    path('admin/reported-posts/', ReportedPostsListView.as_view()),
+    path('admin/reports/', reported_posts_view, name='admin-reports'),
+    path('admin/reports/<int:post_id>/delete-post/', delete_reported_post, name='admin-delete-reported-post'),
+    path('admin/reports/<int:report_id>/ignore/', ignore_report, name='admin-ignore-report'),
+
 ]
 
 urlpatterns += router.urls

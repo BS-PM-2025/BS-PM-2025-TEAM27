@@ -9,6 +9,7 @@ from django.conf import settings
 from accounts.models import VisitorProfile, BusinessProfile, User
 from datetime import timedelta
 from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
+from .models import Post, Like, Comment, Report
 
 
 class VisitorRegisterSerializer(serializers.ModelSerializer):
@@ -240,6 +241,50 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
     class Meta:
         model = ContactMessage
-        fields = ['id', 'subject', 'message', 'created_at']
+        fields = ['id', 'user', 'subject', 'message', 'created_at']
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'post', 'content', 'created_at']
+        extra_kwargs = {
+            'post': {'read_only': True}  # post is provided in the view, not in the request body
+        }
+
+class PostSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    is_owner = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    comments = CommentSerializer(many=True, read_only=True)
+    comments_count = serializers.IntegerField(source='comments.count', read_only=True)
+
+    class Meta:
+        model = Post
+        fields = [
+            'id', 'user', 'content', 'image', 'created_at',
+            'is_owner', 'likes_count', 'comments_count', 'comments' 
+        ]
+
+    def get_likes_count(self, obj):
+        return Like.objects.filter(post=obj).count()
+
+    def get_is_owner(self, obj):
+        request = self.context.get('request')
+        return request and request.user == obj.user
+
+class LikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Like
+        fields = ['id', 'user', 'post', 'created_at']
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = ['id', 'reason', 'created_at']
+        read_only_fields = ['id', 'created_at']

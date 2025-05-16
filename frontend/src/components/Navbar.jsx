@@ -68,6 +68,12 @@ const Navbar = ({ changeLanguage }) => {
       <ul className="hidden md:flex space-x-6 font-medium">
         <li><a href="#home" className="hover:text-blue-600">{t("nav.home")}</a></li>
         <li><a href="#map" className="hover:text-blue-600">{t("nav.map")}</a></li>
+        <li>
+          <Link to="/feed" className="hover:text-blue-500">📸 Feed</Link>
+        </li>
+        <li>
+          <Link to="/create-post" className="hover:text-green-600">➕ New Post</Link>
+        </li>
         <li><a href="#restaurants" className="hover:text-blue-600">{t("nav.restaurants")}</a></li>
         <li><a href="#attractions" className="hover:text-blue-600">{t("nav.attractions")}</a></li>
         <li><a href="#events" className="hover:text-blue-600">{t("nav.events")}</a></li>

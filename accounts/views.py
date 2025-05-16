@@ -18,11 +18,14 @@ from .serializers import UserAdminSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
+
 from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
 from .serializers import BusinessProfileSerializer, GalleryImageSerializer, SaleSerializer,ContactMessageSerializer
 from rest_framework import viewsets, permissions
 from django.conf import settings
-
+from .models import Post, Like, Comment, Report
+from .serializers import PostSerializer, LikeSerializer, CommentSerializer, ReportSerializer
 from .serializers import (
     VisitorRegisterSerializer,
     BusinessRegisterSerializer,
@@ -69,15 +72,14 @@ class VerifyEmailView(APIView):
         try:
             uid = urlsafe_base64_decode(uidb64).decode()
             user = User.objects.get(pk=uid)
-        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
-            return Response({'error': 'Invalid verification link'}, status=status.HTTP_400_BAD_REQUEST)
-
-        if default_token_generator.check_token(user, token):
-            user.is_active = True
-            user.save()
-            return Response({'message': 'Email verified successfully!'}, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid or expired token'}, status=status.HTTP_400_BAD_REQUEST)
+            if default_token_generator.check_token(user, token):
+                user.is_active = True
+                user.save()
+                return redirect("http://localhost:3000/verify-success")
+            else:
+                return redirect("http://localhost:3000/verify-failed")
+        except Exception as e:
+            return redirect("http://localhost:3000/verify-failed")
 
 
 class VisitorLoginView(TokenObtainPairView):
@@ -332,3 +334,128 @@ class ContactUsView(generics.CreateAPIView):
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[settings.ADMIN_EMAIL],
         )
+
+
+class ContactMessageListView(generics.ListAPIView):
+    queryset = ContactMessage.objects.all().order_by('-created_at')
+    serializer_class = ContactMessageSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+class ContactMessageDeleteView(generics.DestroyAPIView):
+    queryset = ContactMessage.objects.all()
+    serializer_class = ContactMessageSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+class PostListCreateView(generics.ListCreateAPIView):
+    queryset = Post.objects.all().order_by('-created_at')
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Post.objects.all()
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_update(self, serializer):
+        if self.request.user != self.get_object().user:
+            raise PermissionError("You can't edit this post.")
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if self.request.user != instance.user:
+            raise PermissionError("You can't delete this post.")
+        instance.delete()
+
+class LikePostView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        post = Post.objects.get(pk=pk)
+        like, created = Like.objects.get_or_create(user=request.user, post=post)
+        if not created:
+            like.delete()
+            return Response({"message": "Unliked"})
+        return Response({"message": "Liked"})
+
+class CommentCreateView(generics.CreateAPIView):
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs['pk']
+        post = Post.objects.get(pk=post_id)
+        serializer.save(user=self.request.user, post=post)
+
+class ReportPostView(generics.CreateAPIView):
+    serializer_class = ReportSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        post_id = self.kwargs['pk']
+        post = Post.objects.get(pk=post_id)
+        report = serializer.save(reporter=self.request.user, post=post)
+
+        send_mail(
+            subject=f"🚨 Post Reported by {self.request.user.email}",
+            message=f"The post with ID {post_id} was reported.\n\nReason: {report.reason}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.ADMIN_EMAIL],
+            fail_silently=False,
+        )
+class ReportedPostsListView(generics.ListAPIView):
+    queryset = Report.objects.all().order_by('-created_at')
+    serializer_class = ReportSerializer
+    permission_classes = [permissions.IsAdminUser]
+
+class PostViewSet(viewsets.ModelViewSet):
+    queryset = Post.objects.all().order_by('-created_at')
+    serializer_class = PostSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def reported_posts_view(request):
+    reports = Report.objects.select_related('post', 'reporter').all()
+    data = [{
+        "report_id": report.id,
+        "reason": report.reason,
+        "created_at": report.created_at,
+        "post_id": report.post.id,
+        "post_content": report.post.content,
+        "post_image": report.post.image.url if report.post.image else None,
+        "reporter_email": report.reporter.email,
+        "post_user_email": report.post.user.email,
+    } for report in reports]
+    return Response(data)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def delete_reported_post(request, post_id):
+    try:
+        Post.objects.get(id=post_id).delete()
+        Report.objects.filter(post_id=post_id).delete()
+        return Response({"detail": "Post and related reports deleted."})
+    except Post.DoesNotExist:
+        return Response({"detail": "Post not found."}, status=404)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def ignore_report(request, report_id):
+    try:
+        Report.objects.get(id=report_id).delete()
+        return Response({"detail": "Report ignored and removed."})
+    except Report.DoesNotExist:
+        return Response({"detail": "Report not found."}, status=404)

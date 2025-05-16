@@ -36,7 +36,9 @@ const calculateDaysLeft = (dateStr) => {
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchUsers = async () => {
@@ -54,8 +56,24 @@ const AdminPanel = () => {
     }
   };
 
+  const fetchContactMessages = async () => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      const response = await axios.get(`${API_BASE}/admin/contact-messages/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMessages(response.data);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setSnackbar({ open: true, message: 'Failed to fetch contact messages.', severity: 'error' });
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
   useEffect(() => {
     fetchUsers();
+    fetchContactMessages();
   }, []);
 
   const handleAction = async (userId, action) => {
@@ -94,6 +112,20 @@ const AdminPanel = () => {
     }
   };
 
+  const handleDeleteMessage = async (id) => {
+    try {
+      const token = localStorage.getItem('adminAccessToken');
+      await axios.delete(`${API_BASE}/admin/contact-messages/${id}/delete/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSnackbar({ open: true, message: 'Message deleted.', severity: 'success' });
+      fetchContactMessages();
+    } catch (error) {
+      console.error('Delete error:', error);
+      setSnackbar({ open: true, message: 'Failed to delete message.', severity: 'error' });
+    }
+  };
+
   return (
     <Box sx={{ padding: 4, backgroundColor: '#202020', minHeight: '100vh', color: '#fff' }}>
       <Typography variant="h4" gutterBottom>Admin Panel</Typography>
@@ -128,11 +160,11 @@ const AdminPanel = () => {
                     <TableCell>{user.username}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                    <Chip label={role} color={
+                      <Chip label={role} color={
                         role === 'Admin' ? 'secondary' :
                         role === 'Business' ? 'info' :
                         role === 'Visitor' ? 'success' : 'default'
-                    } />
+                      } />
                     </TableCell>
                     <TableCell>
                       <Chip label={user.is_active ? 'Active' : 'Inactive'} color={user.is_active ? 'success' : 'warning'} />
@@ -173,6 +205,48 @@ const AdminPanel = () => {
                   </StyledTableRow>
                 );
               })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+
+      <Typography variant="h5" mt={6} mb={2}>Contact Messages</Typography>
+
+      {loadingMessages ? (
+        <CircularProgress sx={{ color: '#fff' }} />
+      ) : messages.length === 0 ? (
+        <Typography>No messages found.</Typography>
+      ) : (
+        <TableContainer component={Paper} sx={{ backgroundColor: '#1a1a1a', mt: 2 }}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <StyledTableCell>User</StyledTableCell>
+                <StyledTableCell>Subject</StyledTableCell>
+                <StyledTableCell>Message</StyledTableCell>
+                <StyledTableCell>Date</StyledTableCell>
+                <StyledTableCell>Actions</StyledTableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {messages.map((msg) => (
+                <StyledTableRow key={msg.id}>
+                  <TableCell>{msg.user}</TableCell>
+                  <TableCell>{msg.subject}</TableCell>
+                  <TableCell>{msg.message}</TableCell>
+                  <TableCell>{new Date(msg.created_at).toLocaleString()}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      onClick={() => handleDeleteMessage(msg.id)}
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
+                </StyledTableRow>
+              ))}
             </TableBody>
           </Table>
         </TableContainer>
