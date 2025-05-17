@@ -75,9 +75,9 @@ urlpatterns = [
     path('posts/<int:pk>/comment/', CommentCreateView.as_view()),
     path('posts/<int:pk>/report/', ReportPostView.as_view()),
     path('admin/reported-posts/', ReportedPostsListView.as_view()),
-    path('admin/reports/', reported_posts_view, name='admin-reports'),
-    path('admin/reports/<int:post_id>/delete-post/', delete_reported_post, name='admin-delete-reported-post'),
-    path('admin/reports/<int:report_id>/ignore/', ignore_report, name='admin-ignore-report'),
+    path('admin/reported-posts/', reported_posts_view, name='reported-posts'),
+    path('admin/reported-posts/<int:post_id>/delete-post/', delete_reported_post, name='delete-reported-post'),
+    path('admin/reported-posts/<int:report_id>/ignore/', ignore_report, name='ignore-report'),
 
 ]
 

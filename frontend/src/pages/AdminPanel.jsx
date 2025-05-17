@@ -40,7 +40,8 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(true);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-
+  const [reports, setReports] = useState([]);
+  const [loadingReports, setLoadingReports] = useState(true);
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('adminAccessToken');
@@ -74,6 +75,7 @@ const AdminPanel = () => {
   useEffect(() => {
     fetchUsers();
     fetchContactMessages();
+    fetchReportedPosts();
   }, []);
 
   const handleAction = async (userId, action) => {
@@ -126,6 +128,50 @@ const AdminPanel = () => {
     }
   };
 
+
+  const fetchReportedPosts = async () => {
+  try {
+    const token = localStorage.getItem('adminAccessToken');
+    const response = await axios.get(`${API_BASE}/admin/reported-posts/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setReports(response.data);
+  } catch (error) {
+    console.error('Error fetching reported posts:', error);
+    setSnackbar({ open: true, message: 'Failed to fetch reported posts.', severity: 'error' });
+  } finally {
+    setLoadingReports(false);
+  }
+};
+
+const handleDeleteReportedPost = async (postId) => {
+  try {
+    const token = localStorage.getItem('adminAccessToken');
+    await axios.delete(`${API_BASE}/admin/reported-posts/${postId}/delete-post/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setSnackbar({ open: true, message: 'Reported post deleted.', severity: 'success' });
+    fetchReportedPosts();
+  } catch (error) {
+    console.error('Error deleting post:', error);
+    setSnackbar({ open: true, message: 'Failed to delete post.', severity: 'error' });
+  }
+};
+
+const handleIgnoreReport = async (reportId) => {
+  try {
+    const token = localStorage.getItem('adminAccessToken');
+    await axios.delete(`${API_BASE}/admin/reported-posts/${reportId}/ignore/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setSnackbar({ open: true, message: 'Report ignored.', severity: 'info' });
+    fetchReportedPosts();
+  } catch (error) {
+    console.error('Error ignoring report:', error);
+    setSnackbar({ open: true, message: 'Failed to ignore report.', severity: 'error' });
+  }
+};
+ 
   return (
     <Box sx={{ padding: 4, backgroundColor: '#202020', minHeight: '100vh', color: '#fff' }}>
       <Typography variant="h4" gutterBottom>Admin Panel</Typography>
@@ -252,6 +298,68 @@ const AdminPanel = () => {
         </TableContainer>
       )}
 
+     <Typography variant="h5" mt={6} mb={2}>Reported Posts</Typography>
+
+{loadingReports ? (
+  <CircularProgress sx={{ color: '#fff' }} />
+) : reports.length === 0 ? (
+  <Typography>No reported posts.</Typography>
+) : (
+  <TableContainer component={Paper} sx={{ backgroundColor: '#1a1a1a', mt: 2 }}>
+    <Table>
+      <TableHead>
+        <TableRow>
+          <StyledTableCell>Post Content</StyledTableCell>
+          <StyledTableCell>Reason</StyledTableCell>
+          <StyledTableCell>Reporter</StyledTableCell>
+          <StyledTableCell>Date</StyledTableCell>
+          <StyledTableCell>Actions</StyledTableCell>
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        {reports.map((report) => (
+          <StyledTableRow key={report.id}>
+            <TableCell>
+  {report.post?.content || 'No content'}
+  <br />
+  {report.post?.image && (
+    <img
+      src={report.post.image} 
+      alt="Post"
+      style={{ maxWidth: '100px', marginTop: '8px' }}
+    />
+  )}
+</TableCell>
+            <TableCell>{report.reason}</TableCell>
+            <TableCell>{report.reporter_email || 'N/A'}</TableCell>
+            <TableCell>{new Date(report.created_at).toLocaleString()}</TableCell>
+            <TableCell>
+              <Button
+                variant="outlined"
+                color="info"
+                size="small"
+                onClick={() => handleIgnoreReport(report.id)}
+              >
+                Ignore
+              </Button>
+            
+              <Button
+                variant="outlined"
+                color="info"
+                size="small"
+                onClick={() => handleIgnoreReport(report.id)}
+              >
+                Processed
+              </Button>
+            </TableCell>
+          </StyledTableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </TableContainer>
+)}
+
+  
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

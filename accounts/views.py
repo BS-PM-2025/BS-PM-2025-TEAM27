@@ -427,17 +427,9 @@ class CommentViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAdminUser])
 def reported_posts_view(request):
     reports = Report.objects.select_related('post', 'reporter').all()
-    data = [{
-        "report_id": report.id,
-        "reason": report.reason,
-        "created_at": report.created_at,
-        "post_id": report.post.id,
-        "post_content": report.post.content,
-        "post_image": report.post.image.url if report.post.image else None,
-        "reporter_email": report.reporter.email,
-        "post_user_email": report.post.user.email,
-    } for report in reports]
-    return Response(data)
+    serializer = ReportSerializer(reports, many=True, context={'request': request})
+    return Response(serializer.data)
+
 
 
 @api_view(['DELETE'])
@@ -449,7 +441,6 @@ def delete_reported_post(request, post_id):
         return Response({"detail": "Post and related reports deleted."})
     except Post.DoesNotExist:
         return Response({"detail": "Post not found."}, status=404)
-
 
 @api_view(['DELETE'])
 @permission_classes([IsAdminUser])

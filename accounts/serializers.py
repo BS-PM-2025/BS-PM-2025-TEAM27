@@ -11,7 +11,6 @@ from datetime import timedelta
 from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
 from .models import Post, Like, Comment, Report
 
-
 class VisitorRegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, label="Confirm Password")
     phone_number = serializers.CharField(write_only=True)
@@ -254,7 +253,7 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['id', 'user', 'post', 'content', 'created_at']
         extra_kwargs = {
-            'post': {'read_only': True}  # post is provided in the view, not in the request body
+            'post': {'read_only': True}  
         }
 
 class PostSerializer(serializers.ModelSerializer):
@@ -284,7 +283,14 @@ class LikeSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'post', 'created_at']
 
 class ReportSerializer(serializers.ModelSerializer):
+    post = serializers.SerializerMethodField()
+    reporter_email = serializers.EmailField(source='reporter.email', read_only=True)
+
     class Meta:
         model = Report
-        fields = ['id', 'reason', 'created_at']
+        fields = ['id', 'reason', 'created_at', 'reporter_email', 'post']
         read_only_fields = ['id', 'created_at']
+
+    def get_post(self, obj):
+        request = self.context.get('request')  
+        return PostSerializer(obj.post, context=self.context).data
