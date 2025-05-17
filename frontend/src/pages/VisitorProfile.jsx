@@ -2,24 +2,22 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE = "http://127.0.0.1:8000/api";
+
 const VisitorProfile = () => {
   const [profile, setProfile] = useState(null);
   const [phone, setPhone] = useState("");
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
   const [message, setMessage] = useState("");
+  const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
 
-  const API_BASE = "http://127.0.0.1:8000/api";
-
-  const authHeaders = (token) => ({
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const authHeaders = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
 
   const refreshToken = async () => {
     const refresh = localStorage.getItem("visitorRefreshToken");
     if (!refresh) return false;
-
     try {
       const res = await axios.post(`${API_BASE}/token/refresh/`, { refresh });
       localStorage.setItem("visitorAccessToken", res.data.access);
@@ -40,9 +38,16 @@ const VisitorProfile = () => {
         const newToken = await refreshToken();
         if (newToken) fetchProfile(newToken);
         else navigate("/login/visitor");
-      } else {
-        console.error("Failed to fetch profile:", err);
       }
+    }
+  };
+
+  const fetchMyPosts = async (token) => {
+    try {
+      const res = await axios.get(`${API_BASE}/my-posts/`, authHeaders(token));
+      setPosts(res.data);
+    } catch (err) {
+      console.error("Failed to load posts", err);
     }
   };
 
@@ -50,6 +55,7 @@ const VisitorProfile = () => {
     const token = localStorage.getItem("visitorAccessToken");
     if (!token) return navigate("/login/visitor");
     fetchProfile(token);
+    fetchMyPosts(token);
   }, [navigate]);
 
   const handleUpdate = async (e) => {
@@ -62,7 +68,7 @@ const VisitorProfile = () => {
     if (image) formData.append("profile_image", image);
 
     try {
-      const res = await axios.put(`${API_BASE}/profile/visitor/`, formData, {
+      await axios.put(`${API_BASE}/profile/visitor/`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -70,49 +76,57 @@ const VisitorProfile = () => {
       });
       setMessage("✅ Profile updated successfully!");
       fetchProfile(token);
-    } catch (err) {
+    } catch {
       setMessage("❌ Failed to update profile.");
-      console.error("Update error:", err.response?.data || err.message);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    try {
+      const token = localStorage.getItem("visitorAccessToken");
+      await axios.delete(`${API_BASE}/posts/${id}/`, authHeaders(token));
+      fetchMyPosts(token);
+    } catch {
+      alert("Failed to delete post");
     }
   };
 
   if (!profile) return <div className="text-center py-10 text-gray-500">Loading profile...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto mt-12 px-6 py-8 bg-white rounded-xl shadow-md border">
-      <div className="flex flex-col md:flex-row items-center gap-6">
+    <div className="max-w-5xl mx-auto mt-12 px-6 py-8 bg-white rounded-xl shadow-lg">
+      <div className="flex flex-col md:flex-row items-center gap-6 border-b pb-6">
         <img
           src={preview || "/default-avatar.png"}
           alt="Profile"
-          className="w-36 h-36 rounded-full object-cover border-4 border-blue-500 shadow"
+          className="w-36 h-36 rounded-full object-cover border-4 border-blue-500"
         />
         <div className="text-center md:text-left">
           <h1 className="text-3xl font-bold text-blue-700">{profile.username}</h1>
-          <p className="text-gray-500">📧 {profile.email}</p>
-          <p className="text-gray-500">📍 תל אביב - יפו</p>
+          <p className="text-gray-600">📧 {profile.email}</p>
+          <p className="text-gray-500">📍 יפו - תל אביב</p>
           <p className="text-gray-500">📅 Joined: {new Date().toLocaleDateString()}</p>
         </div>
       </div>
 
-      <form onSubmit={handleUpdate} className="mt-8 space-y-5">
+      <form onSubmit={handleUpdate} className="mt-6 space-y-5">
         {message && (
-          <div className={`text-center py-2 px-4 rounded font-semibold ${message.startsWith("✅") ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
-            {message}
-          </div>
+          <div className={`text-center font-medium ${message.includes("✅") ? "text-green-600" : "text-red-600"}`}>{message}</div>
         )}
 
         <div>
-          <label className="block mb-1 font-semibold text-gray-700">Phone Number</label>
+          <label className="block text-gray-700 font-medium mb-1">Phone Number</label>
           <input
             type="text"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-blue-400"
+            className="w-full p-2 border border-gray-300 rounded"
           />
         </div>
 
         <div>
-          <label className="block mb-1 font-semibold text-gray-700">Profile Picture</label>
+          <label className="block text-gray-700 font-medium mb-1">Profile Picture</label>
           <input
             type="file"
             accept="image/*"
@@ -121,25 +135,45 @@ const VisitorProfile = () => {
               setImage(file);
               setPreview(URL.createObjectURL(file));
             }}
-            className="w-full text-sm file:border file:px-4 file:py-2 file:rounded file:bg-blue-100 file:text-blue-700"
+            className="w-full"
           />
         </div>
 
-        <button
-          type="submit"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded font-semibold"
-        >
+        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded">
           Update Profile
         </button>
       </form>
 
       <div className="mt-10 pt-6 border-t">
-        <div className="flex space-x-6 text-sm font-semibold text-gray-600">
-          <button className="text-blue-600 border-b-2 border-blue-600 pb-1">Posts</button>
-          <button className="hover:text-blue-600">Favorites</button>
-          <button className="hover:text-blue-600">Reviews</button>
-        </div>
-        <p className="mt-4 text-sm text-gray-400">No posts to display yet.</p>
+        <h2 className="text-xl font-semibold text-gray-700 mb-4">📝 My Posts</h2>
+        {posts.length === 0 ? (
+          <p className="text-gray-500">No posts to display yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {posts.map((post) => (
+              <div key={post.id} className="p-4 border rounded bg-gray-50">
+                <div className="flex justify-between items-center">
+                  <p className="text-gray-800 font-medium">{post.content}</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => navigate(`/edit-post/${post.id}`)}
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(post.id)}
+                      className="text-red-600 hover:underline text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                {post.image && <img src={post.image} alt="Post" className="mt-2 rounded max-h-60" />}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

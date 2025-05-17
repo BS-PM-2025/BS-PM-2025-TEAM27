@@ -450,3 +450,20 @@ def ignore_report(request, report_id):
         return Response({"detail": "Report ignored and removed."})
     except Report.DoesNotExist:
         return Response({"detail": "Report not found."}, status=404)
+    
+@api_view(['DELETE'])
+@permission_classes([IsAdminUser])
+def admin_delete_post(request, post_id):
+    try:
+        post = Post.objects.get(id=post_id)
+        post.delete()
+        return Response({"detail": "Post deleted successfully."})
+    except Post.DoesNotExist:
+        return Response({"detail": "Post not found."}, status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_posts(request):
+    posts = Post.objects.filter(user=request.user).order_by('-created_at')
+    serializer = PostSerializer(posts, many=True, context={'request': request})
+    return Response(serializer.data)

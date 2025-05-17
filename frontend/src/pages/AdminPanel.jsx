@@ -344,13 +344,14 @@ const handleIgnoreReport = async (reportId) => {
               </Button>
             
               <Button
-                variant="outlined"
-                color="info"
-                size="small"
-                onClick={() => handleIgnoreReport(report.id)}
-              >
-                Processed
-              </Button>
+  variant="outlined"
+  color="error"
+  size="small"
+  onClick={() => handleDeleteReportedPost(report.post.id)}
+  sx={{ mr: 1 }}
+>
+  Delete Post
+</Button>
             </TableCell>
           </StyledTableRow>
         ))}

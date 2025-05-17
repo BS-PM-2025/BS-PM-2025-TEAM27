@@ -35,7 +35,9 @@ from .views import (
     CommentViewSet,
     reported_posts_view,
     delete_reported_post,
-    ignore_report
+    ignore_report,
+    admin_delete_post,
+    my_posts
 )
 
 
@@ -78,6 +80,8 @@ urlpatterns = [
     path('admin/reported-posts/', reported_posts_view, name='reported-posts'),
     path('admin/reported-posts/<int:post_id>/delete-post/', delete_reported_post, name='delete-reported-post'),
     path('admin/reported-posts/<int:report_id>/ignore/', ignore_report, name='ignore-report'),
+    path('admin/posts/<int:post_id>/delete/', admin_delete_post, name='admin-delete-post'),
+    path('my-posts/', my_posts),
 
 ]
 

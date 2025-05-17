@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const API = 'http://localhost:8000/api';
+const user = JSON.parse(localStorage.getItem('user')) || {};
 
 const PostFeed = () => {
   const [posts, setPosts] = useState([]);
@@ -44,6 +45,23 @@ const PostFeed = () => {
     }
   };
 
+  const handleAdminDeletePost = async (postId) => {
+  try {
+    const token = localStorage.getItem('adminAccessToken'); // or whatever token key you use
+    await axios.delete(`http://127.0.0.1:8000/api/admin/posts/${postId}/delete/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    alert("Post deleted.");
+    fetchPosts(); // re-fetch or remove it from state
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    alert("Failed to delete post.");
+  }
+};
+
+
   const handleComment = async (id) => {
     if (!commentText[id]) return;
     try {
@@ -83,12 +101,23 @@ const handleReport = async (id) => {
           <div key={post.id} className="bg-white p-6 rounded-xl shadow-md space-y-4">
             <div className="flex justify-between items-center">
               <h4 className="text-lg font-semibold text-gray-700">{post.user}</h4>
-              {post.is_owner && (
-                <div className="flex gap-2">
-                  <button onClick={() => navigate(`/edit-post/${post.id}`)} className="text-sm text-blue-600 hover:underline">Edit</button>
-                  <button onClick={() => handleDelete(post.id)} className="text-sm text-red-600 hover:underline">Delete</button>
-                </div>
-              )}
+              {(post.is_owner || user?.is_admin) && (
+  <div className="flex gap-2">
+    {post.is_owner && (
+      <button onClick={() => navigate(`/edit-post/${post.id}`)} className="text-sm text-blue-600 hover:underline">Edit</button>
+    )}
+    <button
+      onClick={() =>
+        user?.is_admin
+          ? handleAdminDeletePost(post.id)
+          : handleDelete(post.id)
+      }
+      className="text-sm text-red-600 hover:underline"
+    >
+      Delete
+    </button>
+  </div>
+)}
             </div>
 
             <p className="text-gray-800">{post.content}</p>
