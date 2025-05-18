@@ -28,7 +28,7 @@ const BusinessLogin = () => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('businessAccessToken', data.access);
-        navigate('/dashboard/business');
+        navigate('/');
       } else {
         const err = await response.json();
         setSnackbar({ open: true, message: err.detail || 'Login failed', severity: 'error' });
