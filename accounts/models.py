@@ -9,7 +9,8 @@ from django.conf import settings
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150)
-
+    full_name = models.CharField(max_length=100, blank=True, null=True)
+    address = models.CharField(max_length=255, blank=True, null=True)
     is_visitor = models.BooleanField(default=False)
     is_business = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)

@@ -184,11 +184,16 @@ class CustomBusinessTokenSerializer(TokenObtainPairSerializer):
 class VisitorProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
+    full_name = serializers.CharField(source='user.full_name', required=False)
+    address = serializers.CharField(source='user.address', required=False)
     profile_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = VisitorProfile
-        fields = ['username', 'email', 'phone_number', 'profile_image', 'profile_image_url']
+        fields = [
+            'username', 'email', 'full_name', 'address',
+            'phone_number', 'profile_image', 'profile_image_url'
+        ]
 
     def get_profile_image_url(self, obj):
         request = self.context.get('request')
@@ -196,6 +201,17 @@ class VisitorProfileSerializer(serializers.ModelSerializer):
             return request.build_absolute_uri(obj.profile_image.url)
         return None
 
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user', {})
+        for attr, value in user_data.items():
+            setattr(instance.user, attr, value)
+        instance.user.save()
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 class UserAdminSerializer(serializers.ModelSerializer):
     class Meta:

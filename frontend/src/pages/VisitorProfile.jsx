@@ -6,11 +6,14 @@ const API_BASE = "http://127.0.0.1:8000/api";
 
 const VisitorProfile = () => {
   const [profile, setProfile] = useState(null);
+  const [fullName, setFullName] = useState("");
+  const [address, setAddress] = useState("");
   const [phone, setPhone] = useState("");
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState("");
   const [message, setMessage] = useState("");
   const [posts, setPosts] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
 
   const authHeaders = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
@@ -32,6 +35,8 @@ const VisitorProfile = () => {
       const res = await axios.get(`${API_BASE}/profile/visitor/`, authHeaders(token));
       setProfile(res.data);
       setPhone(res.data.phone_number || "");
+      setFullName(res.data.full_name || "");
+      setAddress(res.data.address || "");
       setPreview(res.data.profile_image_url || "/default-avatar.png");
     } catch (err) {
       if (err.response?.status === 401) {
@@ -65,6 +70,8 @@ const VisitorProfile = () => {
 
     const formData = new FormData();
     formData.append("phone_number", phone);
+    formData.append("full_name", fullName);
+    formData.append("address", address);
     if (image) formData.append("profile_image", image);
 
     try {
@@ -75,6 +82,7 @@ const VisitorProfile = () => {
         },
       });
       setMessage("✅ Profile updated successfully!");
+      setIsEditing(false);
       fetchProfile(token);
     } catch {
       setMessage("❌ Failed to update profile.");
@@ -102,47 +110,108 @@ const VisitorProfile = () => {
           alt="Profile"
           className="w-36 h-36 rounded-full object-cover border-4 border-blue-500"
         />
-        <div className="text-center md:text-left">
-          <h1 className="text-3xl font-bold text-blue-700">{profile.username}</h1>
-          <p className="text-gray-600">📧 {profile.email}</p>
-          <p className="text-gray-500">📍 יפו - תל אביב</p>
-          <p className="text-gray-500">📅 Joined: {new Date().toLocaleDateString()}</p>
+        <div className="flex-1 text-center md:text-left">
+          {isEditing ? (
+            <>
+              <div className="mb-2">
+                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+              <div className="mb-2">
+                <label className="block text-sm font-medium text-gray-700">Address</label>
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-bold text-blue-700">{fullName}</h1>
+              <p className="text-gray-600">📧 {profile.email}</p>
+              <p className="text-gray-500">📍 {address || "יפו - תל אביב"}</p>
+              <p className="text-gray-500">📅 Joined: {new Date().toLocaleDateString()}</p>
+            </>
+          )}
+        </div>
+        <div className="text-right mt-4">
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="text-blue-600 hover:underline"
+            >
+              Edit Profile
+            </button>
+          ) : (
+            <div className="space-x-2">
+              <button
+                type="submit"
+                form="profileForm"
+                className="text-green-600 hover:underline"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => {
+                  setIsEditing(false);
+                  setFullName(profile.full_name || "");
+                  setAddress(profile.address || "");
+                  setPhone(profile.phone_number || "");
+                  setPreview(profile.profile_image_url || "/default-avatar.png");
+                }}
+                className="text-red-600 hover:underline"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <form onSubmit={handleUpdate} className="mt-6 space-y-5">
-        {message && (
-          <div className={`text-center font-medium ${message.includes("✅") ? "text-green-600" : "text-red-600"}`}>{message}</div>
-        )}
+      {isEditing && (
+        <form id="profileForm" onSubmit={handleUpdate} className="mt-6 space-y-5">
+          {message && (
+            <div
+              className={`text-center font-medium ${
+                message.includes("✅") ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              {message}
+            </div>
+          )}
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Phone Number</label>
-          <input
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded"
-          />
-        </div>
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Phone Number</label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded"
+            />
+          </div>
 
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">Profile Picture</label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              setImage(file);
-              setPreview(URL.createObjectURL(file));
-            }}
-            className="w-full"
-          />
-        </div>
-
-        <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded">
-          Update Profile
-        </button>
-      </form>
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Profile Picture</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                setImage(file);
+                setPreview(URL.createObjectURL(file));
+              }}
+              className="w-full"
+            />
+          </div>
+        </form>
+      )}
 
       <div className="mt-10 pt-6 border-t">
         <h2 className="text-xl font-semibold text-gray-700 mb-4">📝 My Posts</h2>
