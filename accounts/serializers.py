@@ -65,6 +65,7 @@ class BusinessRegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True)
     business_name = serializers.CharField(write_only=True)
     category = serializers.CharField(write_only=True)
+    custom_category = serializers.CharField(write_only=True, required=False)
     description = serializers.CharField(write_only=True)
     phone = serializers.CharField(write_only=True)
     location = serializers.CharField(write_only=True)
@@ -74,8 +75,8 @@ class BusinessRegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'username', 'email', 'password', 'password2',
-            'business_name', 'category', 'description',
-            'phone', 'location', 'is_in_jaffa'
+            'business_name', 'category', 'custom_category',
+            'description', 'phone', 'location', 'is_in_jaffa'
         ]
         extra_kwargs = {'password': {'write_only': True}}
 
@@ -84,13 +85,18 @@ class BusinessRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Passwords do not match.")
         if not data.get('is_in_jaffa'):
             raise serializers.ValidationError("Business must be located in Jaffa.")
+        if data.get('category') == 'other' and not self.initial_data.get('custom_category'):
+            raise serializers.ValidationError("Custom category is required when 'other' is selected.")
         return data
 
     def create(self, validated_data):
         validated_data.pop('password2')
+        raw_category = validated_data.pop('category')
+        category = self.initial_data.get('custom_category') if raw_category == 'other' else raw_category
+
         business_data = {
             'business_name': validated_data.pop('business_name'),
-            'category': validated_data.pop('category'),
+            'category': category,
             'description': validated_data.pop('description'),
             'phone': validated_data.pop('phone'),
             'location': validated_data.pop('location'),
@@ -130,6 +136,8 @@ class BusinessRegisterSerializer(serializers.ModelSerializer):
             from_email="noreply@jaffaexplorer.com",
             recipient_list=["admin@jaffaexplorer.com"],
         )
+
+
 class CustomVisitorTokenSerializer(TokenObtainPairSerializer):
     username_field = 'email'
 

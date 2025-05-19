@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Box, TextField, Button, Checkbox, FormControlLabel, Typography, Snackbar, Alert
+  Box, TextField, Button, Checkbox, FormControlLabel, Typography, Snackbar, Alert, MenuItem
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -18,6 +18,7 @@ const BusinessRegister = () => {
     password2: "",
     business_name: "",
     category: "",
+    custom_category: "",
     description: "",
     phone: "",
     location: "",
@@ -41,11 +42,14 @@ const BusinessRegister = () => {
       return;
     }
 
+    const payload = { ...formData };
+    if (formData.category !== "other") delete payload.custom_category;
+
     try {
       const response = await fetch("http://localhost:8000/api/register/business/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
@@ -103,22 +107,78 @@ const BusinessRegister = () => {
         </Typography>
 
         <form onSubmit={handleSubmit}>
-          {[
-            { name: "username", label: t("register.username") || "Username" },
-            { name: "email", label: t("register.email") || "Email", type: "email" },
-            { name: "business_name", label: t("register.business_name") || "Business Name" },
-            { name: "category", label: t("register.category") || "Category" },
-            { name: "description", label: t("register.description") || "Description" },
-            { name: "phone", label: t("register.phone") || "Phone" },
-            { name: "location", label: t("register.location") || "Location" },
-            { name: "password", label: t("register.password") || "Password", type: "password" },
-            { name: "password2", label: t("register.confirmPassword") || "Confirm Password", type: "password" },
-          ].map(({ name, label, type = "text" }) => (
+          {["username", "email", "business_name"].map((name) => (
             <TextField
               key={name}
               name={name}
-              type={type}
-              label={label}
+              type={name === "email" ? "email" : "text"}
+              label={t(`${name}`) || name}
+              value={formData[name]}
+              onChange={handleChange}
+              fullWidth
+              required
+              margin="normal"
+              InputLabelProps={{ style: { color: "#ccc" } }}
+              InputProps={{ style: { color: "#fff" } }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "#555" },
+                  "&:hover fieldset": { borderColor: "#888" },
+                },
+              }}
+            />
+          ))}
+
+          <TextField
+            select
+            name="category"
+            label={t("category") || "Category"}
+            value={formData.category}
+            onChange={handleChange}
+            fullWidth
+            required
+            margin="normal"
+            InputLabelProps={{ style: { color: "#ccc" } }}
+            InputProps={{ style: { color: "#fff" } }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "& fieldset": { borderColor: "#555" },
+                "&:hover fieldset": { borderColor: "#888" },
+              },
+            }}
+          >
+            <MenuItem value="restaurant">Restaurant</MenuItem>
+            <MenuItem value="attractions">Attractions</MenuItem>
+            <MenuItem value="shop">Shop</MenuItem>
+            <MenuItem value="other">Other</MenuItem>
+          </TextField>
+
+          {formData.category === "other" && (
+            <TextField
+              name="custom_category"
+              label="Enter Custom Category"
+              value={formData.custom_category ?? ""}
+              onChange={handleChange}
+              fullWidth
+              required
+              margin="normal"
+              InputLabelProps={{ style: { color: "#ccc" } }}
+              InputProps={{ style: { color: "#fff" } }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": { borderColor: "#555" },
+                  "&:hover fieldset": { borderColor: "#888" },
+                },
+              }}
+            />
+          )}
+
+          {["description", "phone", "location", "password", "password2"].map((name) => (
+            <TextField
+              key={name}
+              name={name}
+              type={name.includes("password") ? "password" : "text"}
+              label={t(`${name}`) || name}
               value={formData[name]}
               onChange={handleChange}
               fullWidth
