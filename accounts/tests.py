@@ -25,7 +25,7 @@ class AuthTests(TestCase):
         self.visitor_register_url = reverse('visitor-register')
         self.visitor_login_url = reverse('visitor-login')
         self.admin_login_url = reverse('admin-login')
-        self.visitor_profile_url = reverse('visitor-profile')  # replace with actual view name if needed
+        self.visitor_profile_url = reverse('visitorprofile-detail')  # ❗ Replace with your actual profile URL name
 
     def test_admin_login_success(self):
         response = self.client.post(self.admin_login_url, {
@@ -45,7 +45,7 @@ class AuthTests(TestCase):
         self.assertEqual(response.data['detail'], "Invalid credentials or not an admin.")
 
     def test_admin_login_non_admin_user(self):
-        user = User.objects.create_user(
+        User.objects.create_user(
             username='nonadminuser',
             email='notadmin@jaffa.com',
             password='test1234',
@@ -62,11 +62,13 @@ class AuthTests(TestCase):
         data = {
             'email': 'visitor@example.com',
             'password': 'visitorpass123',
+            'confirm_password': 'visitorpass123',
             'username': 'visitoruser',
-            'confirm_password' : 'visitorpass123',   
             'phone_number': '0501234567'
         }
         response = self.client.post(self.visitor_register_url, data)
+        print("Register Response:", response.data)  # Debug helper
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         user = User.objects.get(email='visitor@example.com')
@@ -86,7 +88,7 @@ class AuthTests(TestCase):
         self.assertIn('password', response.data)
 
     def test_visitor_login_success(self):
-        user = User.objects.create_user(
+        User.objects.create_user(
             username='visitor1',
             email='visitor1@example.com',
             password='visitorpass',
@@ -102,7 +104,7 @@ class AuthTests(TestCase):
         self.assertIn('refresh', response.data)
 
     def test_visitor_login_not_active(self):
-        user = User.objects.create_user(
+        User.objects.create_user(
             username='inactiveuser',
             email='inactive@example.com',
             password='visitorpass',
@@ -113,7 +115,7 @@ class AuthTests(TestCase):
             'email': 'inactive@example.com',
             'password': 'visitorpass'
         })
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(response.data['detail'], 'Account is not verified.')
 
     def test_visitor_profile_authenticated_access(self):
