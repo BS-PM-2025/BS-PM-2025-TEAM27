@@ -25,7 +25,6 @@ class AuthTests(TestCase):
         self.visitor_register_url = reverse('visitor-register')
         self.visitor_login_url = reverse('visitor-login')
         self.admin_login_url = reverse('admin-login')
-        self.visitor_profile_url = reverse('visitorprofile-detail')  # ❗ Replace with your actual profile URL name
 
     def test_admin_login_success(self):
         response = self.client.post(self.admin_login_url, {
@@ -67,7 +66,7 @@ class AuthTests(TestCase):
             'phone_number': '0501234567'
         }
         response = self.client.post(self.visitor_register_url, data)
-        print("Register Response:", response.data)  # Debug helper
+        print("Register Response:", response.data)  
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
