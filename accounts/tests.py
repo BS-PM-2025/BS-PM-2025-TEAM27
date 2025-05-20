@@ -13,6 +13,7 @@ class AuthTests(TestCase):
         self.admin_email = 'admin@jaffa.com'
         self.admin_password = 'adminpass123'
         self.admin_user = User.objects.create_user(
+            username='adminuser',  # ✅ Added
             email=self.admin_email,
             password=self.admin_password,
             is_admin=True,
@@ -39,7 +40,12 @@ class AuthTests(TestCase):
         self.assertEqual(response.data['detail'], "Invalid credentials or not an admin.")
 
     def test_admin_login_non_admin_user(self):
-        user = User.objects.create_user(email='notadmin@jaffa.com', password='test1234', is_admin=False)
+        user = User.objects.create_user(
+            username='nonadminuser',  # ✅ Added
+            email='notadmin@jaffa.com',
+            password='test1234',
+            is_admin=False
+        )
         response = self.client.post(self.admin_login_url, {
             'email': 'notadmin@jaffa.com',
             'password': 'test1234',
@@ -51,7 +57,7 @@ class AuthTests(TestCase):
         data = {
             'email': 'visitor@example.com',
             'password': 'visitorpass123',
-            'username': 'visitoruser'
+            'username': 'visitoruser'  # Already correct ✅
         }
         response = self.client.post(self.visitor_register_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
