@@ -62,7 +62,9 @@ class AuthTests(TestCase):
         data = {
             'email': 'visitor@example.com',
             'password': 'visitorpass123',
-            'username': 'visitoruser'
+            'username': 'visitoruser',
+            'confirm_password' : 'visitorpass123',   
+            'phone_number': '0501234567'
         }
         response = self.client.post(self.visitor_register_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
