@@ -28,7 +28,7 @@ const BusinessProfile = () => {
       })
       .catch(err => console.error('Error updating profile:', err));
   };
-
+  
   const handleGalleryImageUpload = () => {
     const formData = new FormData();
     formData.append('image', newGalleryImage);
