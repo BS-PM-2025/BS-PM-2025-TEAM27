@@ -128,7 +128,6 @@ const AdminPanel = () => {
     }
   };
 
-
   const fetchReportedPosts = async () => {
   try {
     const token = localStorage.getItem('adminAccessToken');
