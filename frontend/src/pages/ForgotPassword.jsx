@@ -44,5 +44,4 @@ const ForgotPassword = () => {
     </Box>
   );
 };
-
 export default ForgotPassword;
