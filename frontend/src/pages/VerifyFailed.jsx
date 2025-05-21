@@ -6,4 +6,5 @@ const VerifyFailed = () => (
     </div>
   </div>
 );
+
 export default VerifyFailed;
