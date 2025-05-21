@@ -98,3 +98,17 @@ class FunctionalViewTests(TestCase):
         })
         self.assertEqual(response.status_code, 201)
 
+    def test_contact_messages_list_and_delete_as_admin(self):
+        msg = ContactMessage.objects.create(user=self.user, subject='Hi', message='Test msg')
+
+        list_url = reverse('admin-contact-messages')
+        delete_url = reverse('admin-delete-contact', kwargs={'pk': msg.pk})
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.admin_token}')
+
+        list_response = self.client.get(list_url)
+        self.assertEqual(list_response.status_code, 200)
+
+        delete_response = self.client.delete(delete_url)
+        self.assertEqual(delete_response.status_code, 204)
+
+    
