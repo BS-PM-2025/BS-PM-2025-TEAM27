@@ -20,6 +20,10 @@ import PostFeed from './pages/PostFeed';
 import EditPost from './pages/EditPost';
 import VerifySuccess from './pages/VerifySuccess';
 import VerifyFailed from './pages/VerifyFailed';
+import BusinessDirectory from "./pages/BusinessDirectory";
+import SalesPage from './pages/SalesPage';
+import AdminDashboard from './pages/AdminDashboard';
+import RateSite from './pages/RateSite';
 
 function App() {
   const { i18n } = useTranslation();
@@ -52,6 +56,10 @@ function App() {
           <Route path="/create-post" element={<CreatePost />} />
           <Route path="/feed" element={<PostFeed />} />
           <Route path="/edit-post/:id" element={<EditPost />} />
+          <Route path="/business-directory" element={<BusinessDirectory />} />
+          <Route path="/sales" element={<SalesPage />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/rate" element={<RateSite />} />
         </Routes>
       </div>
     </Router>

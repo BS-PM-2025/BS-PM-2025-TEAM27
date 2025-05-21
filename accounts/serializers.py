@@ -9,8 +9,12 @@ from django.conf import settings
 from accounts.models import VisitorProfile, BusinessProfile, User
 from datetime import timedelta
 from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
+<<<<<<< HEAD
 
 from .models import Post, Like, Comment, Report
+=======
+from .models import Post, Like, Comment, Report,FavoriteSale,SiteRating
+>>>>>>> c2254d5ba6b919fe4a5c830ab05c3d9b7cb99fbc
 
 class VisitorRegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, label="Confirm Password")
@@ -251,9 +255,22 @@ class GalleryImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image', 'uploaded_at']
 
 class SaleSerializer(serializers.ModelSerializer):
+    business_name = serializers.CharField(source='business.business_name', read_only=True)
+    favorites_count = serializers.SerializerMethodField()
+    currently_favorited_by = serializers.SerializerMethodField()
     class Meta:
         model = Sale
-        fields = ['id', 'title', 'description', 'start_date', 'end_date', 'image']
+        fields = [
+            'id', 'title', 'description', 'start_date', 'end_date', 'image',
+            'business_name', 'favorites_count','currently_favorited_by', 'total_favorites'
+        ]
+
+    def get_favorites_count(self, obj):
+        return obj.favorited_by.count()
+
+    def get_currently_favorited_by(self, obj):
+        return obj.favorited_by.count()
+
 
 class BusinessProfileSerializer(serializers.ModelSerializer):
     gallery_images = GalleryImageSerializer(many=True, read_only=True)
@@ -261,7 +278,7 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BusinessProfile
-        fields = ['id', 'business_name', 'description', 'category', 'phone', 'location', 'profile_image', 'gallery_images', 'sales']
+        fields = ['id', 'business_name', 'description', 'category', 'phone', 'location', 'profile_image', 'gallery_images', 'sales','work_time_sun_thu', 'work_time_fri', 'work_time_sat']
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -319,3 +336,15 @@ class ReportSerializer(serializers.ModelSerializer):
     def get_post(self, obj):
         request = self.context.get('request')  
         return PostSerializer(obj.post, context=self.context).data
+
+class FavoriteSaleSerializer(serializers.ModelSerializer):
+    sale_details = SaleSerializer(source='sale', read_only=True)
+    class Meta:
+        model = FavoriteSale
+        fields = ['id', 'sale', 'sale_details', 'created_at']
+        read_only_fields = ['id', 'user', 'created_at']
+
+class SiteRatingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteRating
+        fields = ['rating', 'comment']
