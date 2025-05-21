@@ -102,6 +102,7 @@ const RateSite = () => {
       )}
     </div>
   );
+
 };
 
 export default RateSite;
