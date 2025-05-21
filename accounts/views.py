@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import api_view,permission_classes
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser,AllowAny
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -19,12 +19,12 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from django.shortcuts import redirect
-
-from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
+from django.db.models import Q
+from .models import BusinessProfile, GalleryImage, Sale,ContactMessage,BusinessProfile
 from .serializers import BusinessProfileSerializer, GalleryImageSerializer, SaleSerializer,ContactMessageSerializer
 from rest_framework import viewsets, permissions
 from django.conf import settings
-from .models import Post, Like, Comment, Report
+from .models import Post, Like, Comment, Report,FavoriteSale,SiteRating
 from .serializers import PostSerializer, LikeSerializer, CommentSerializer, ReportSerializer
 from .serializers import (
     VisitorRegisterSerializer,
@@ -33,7 +33,13 @@ from .serializers import (
     CustomVisitorTokenSerializer,
     CustomBusinessTokenSerializer,
     CustomAdminTokenSerializer,
+    BusinessProfileSerializer,
+    FavoriteSaleSerializer,
+    SaleSerializer,
+    SiteRatingSerializer,
 )
+from rest_framework.decorators import action
+from rest_framework.generics import ListAPIView,DestroyAPIView
 
 
 class VisitorRegisterView(generics.CreateAPIView):
@@ -287,22 +293,28 @@ class GalleryImageViewSet(viewsets.ModelViewSet):
         business = self.request.user.businessprofile
         serializer.save(business=business)
 
-
 class SaleViewSet(viewsets.ModelViewSet):
     queryset = Sale.objects.all()
     serializer_class = SaleSerializer
-    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == "DELETE":
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
-        return Sale.objects.filter(business__user=self.request.user)
+        user = self.request.user
+        if user.is_staff or user.is_admin:
+            return Sale.objects.all()
+        return Sale.objects.filter(business__user=user)
 
     def perform_create(self, serializer):
-        business_profile = self.request.user.businessprofile  
+        business_profile = self.request.user.businessprofile
         serializer.save(business=business_profile)
-
 
     def perform_update(self, serializer):
         serializer.save()
+
 
 
 @api_view(['DELETE'])
@@ -467,3 +479,116 @@ def my_posts(request):
     posts = Post.objects.filter(user=request.user).order_by('-created_at')
     serializer = PostSerializer(posts, many=True, context={'request': request})
     return Response(serializer.data)
+
+
+class ApprovedBusinessListAPIView(generics.ListAPIView):
+    serializer_class = BusinessProfileSerializer
+
+    def get_queryset(self):
+        queryset = BusinessProfile.objects.filter(user__is_approved=True)
+        category = self.request.query_params.get('category')
+        open_on_saturday = self.request.query_params.get('open_on_saturday')
+
+        if category:
+            queryset = queryset.filter(category__iexact=category)
+        if open_on_saturday == 'true':
+            queryset = queryset.exclude(work_time_sat__iexact='Closed')
+
+        return queryset
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def approved_businesses(request):
+    businesses = BusinessProfile.objects.filter(user__is_approved=True, user__is_business=True, user__is_active=True)
+    serializer = BusinessProfileSerializer(businesses, many=True, context={"request": request})
+    return Response(serializer.data)   
+
+class FavoriteSaleListCreateView(generics.ListCreateAPIView):
+    serializer_class = FavoriteSaleSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        if not hasattr(self.request.user, 'visitorprofile'):
+            return FavoriteSale.objects.none()
+        return FavoriteSale.objects.filter(user=self.request.user)
+
+
+    def perform_create(self, serializer):
+        sale = serializer.validated_data['sale']
+        favorite, created = FavoriteSale.objects.get_or_create(user=self.request.user, sale=sale)
+        if created:
+            sale.total_favorites += 1
+            sale.save()
+
+
+
+class FavoriteSaleDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, sale_id):
+        try:
+            fav = FavoriteSale.objects.get(user=request.user, sale_id=sale_id)
+            fav.delete()
+            return Response({"detail": "Favorite removed."})
+        except FavoriteSale.DoesNotExist:
+            return Response({"detail": "Not found."}, status=404)
+        
+class AllSalesListView(ListAPIView):
+    queryset = Sale.objects.all()
+    serializer_class = SaleSerializer
+    permission_classes = [AllowAny]
+
+class VisitorFavoriteSalesView(ListAPIView):
+    serializer_class = FavoriteSaleSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return FavoriteSale.objects.filter(user=self.request.user)
+    
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_dashboard_view(request):
+    total_users = User.objects.count()
+    total_visitors = User.objects.filter(is_visitor=True).count()
+    total_businesses = User.objects.filter(is_business=True).count()
+    total_sales = Sale.objects.count()
+    total_favorites = FavoriteSale.objects.count()
+    total_posts = Post.objects.count()
+
+    return Response({
+        'total_users': total_users,
+        'total_visitors': total_visitors,
+        'total_businesses': total_businesses,
+        'total_sales': total_sales,
+        'total_favorites': total_favorites,
+        'total_posts': total_posts,
+    })
+
+class SiteRatingViewSet(viewsets.ModelViewSet):
+    queryset = SiteRating.objects.all()
+    serializer_class = SiteRatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return SiteRating.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = SiteRating.objects.get(user=request.user)
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        except SiteRating.DoesNotExist:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        
+class PublicSiteRatingListView(ListAPIView):
+    queryset = SiteRating.objects.all().order_by('-created_at')
+    serializer_class = SiteRatingSerializer
+    permission_classes = [AllowAny]
+
+class AdminDeleteSiteRatingView(DestroyAPIView):
+    queryset = SiteRating.objects.all()
+    serializer_class = SiteRatingSerializer
+    permission_classes = [IsAdminUser]
