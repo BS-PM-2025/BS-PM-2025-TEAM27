@@ -111,4 +111,22 @@ class FunctionalViewTests(TestCase):
         delete_response = self.client.delete(delete_url)
         self.assertEqual(delete_response.status_code, 204)
 
-    
+    def test_all_sales_and_favorites(self):
+        sale = Sale.objects.create(
+            title='Sale 1',
+            description='Big discount!',
+            start_date=date(2024, 1, 1),
+            end_date=date(2025, 1, 1),
+            business=self.business_profile
+        )
+
+        url = reverse('all-sales')
+        self.client.credentials()
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        FavoriteSale.objects.create(user=self.user, sale=sale)
+        fav_url = reverse('visitor-favorite-sales')
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.user_token}')
+        fav_response = self.client.get(fav_url)
+        self.assertEqual(fav_response.status_code, 200)
