@@ -67,7 +67,7 @@ const ContactUs = () => {
               onChange={(e) => setSubject(e.target.value)}
               required
               className="w-full px-4 py-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-              placeholder="הכנס את נושא ההודעה"
+              placeholder=" הכנס את נושא ההודעה"
             />
           </div>
 
