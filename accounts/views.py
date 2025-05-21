@@ -592,3 +592,4 @@ class AdminDeleteSiteRatingView(DestroyAPIView):
     queryset = SiteRating.objects.all()
     serializer_class = SiteRatingSerializer
     permission_classes = [IsAdminUser]
+
