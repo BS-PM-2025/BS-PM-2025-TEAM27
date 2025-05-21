@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Rating, TextField, Button } from "@mui/material";
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000"; // ✅ Django runs on port 8000
+const BASE_URL = "http://localhost:8000"; 
 
 const RateSite = () => {
   const [rating, setRating] = useState(0);
@@ -102,13 +102,6 @@ const RateSite = () => {
       )}
     </div>
   );
-<<<<<<< HEAD
 
 };
-
 export default RateSite;
-=======
-};
-
-export default RateSite;
->>>>>>> c2254d5ba6b919fe4a5c830ab05c3d9b7cb99fbc

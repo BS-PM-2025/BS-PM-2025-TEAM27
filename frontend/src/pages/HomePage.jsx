@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import bg1 from "../assets/bg-hero.jpg";
@@ -29,11 +30,7 @@ const HomePage = () => {
 
       setTimeout(() => {
         setToast('');
-<<<<<<< HEAD
-      }, 5000); 
-=======
       }, 5000);
->>>>>>> c2254d5ba6b919fe4a5c830ab05c3d9b7cb99fbc
     }
   }, []);
 
@@ -48,6 +45,7 @@ const HomePage = () => {
       className="min-h-screen bg-cover bg-center flex flex-col justify-between relative text-white"
       style={{ backgroundImage: `url(${images[currentImage]})` }}
     >
+      {/* ✅ Toast message if exists */}
       {toast && (
         <div className="absolute top-10 bg-green-600 text-white px-6 py-3 rounded-lg shadow-md animate-bounce z-50">
           {toast}
