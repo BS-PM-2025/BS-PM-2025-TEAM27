@@ -78,15 +78,29 @@ const Navbar = ({ changeLanguage }) => {
             <Link to="/create-post" className="hover:text-green-600">➕ New Post</Link>
           </li>
         )}
-        <li><a href="#restaurants" className="hover:text-blue-600">{t("nav.restaurants")}</a></li>
-        <li><a href="#attractions" className="hover:text-blue-600">{t("nav.attractions")}</a></li>
+        <Link to="/business-directory" className="hover:text-blue-500">
+            What we have in Jaffa
+        </Link>
         <li><a href="#events" className="hover:text-blue-600">{t("nav.events")}</a></li>
+        
+        <li>
+          <Link to="/sales" className="hover:text-blue-500">
+              Sales
+          </Link>
+        </li>
         <li><a href="#about" className="hover:text-blue-600">{t("nav.about")}</a></li>
         <li>
           <Link to="/contact" className="hover:text-blue-600">
             {t("nav.contact")}
           </Link>
         </li>
+        {isAuthenticated && (
+  <li>
+    <Link to="/rate" className="hover:text-blue-400">
+      {t("Rate Us")}
+    </Link>
+  </li>
+)}
       </ul>
 
       <div className="flex items-center space-x-4">
@@ -99,7 +113,7 @@ const Navbar = ({ changeLanguage }) => {
                   setShowRegisterDropdown(!showRegisterDropdown);
                   setShowLoginDropdown(false);
                 }}
-                className="text-blue-700 hover:underline"
+                className="text-blue-700 hover:underline" 
               >
                 {t("auth.register")}
               </button>
@@ -145,10 +159,15 @@ const Navbar = ({ changeLanguage }) => {
           <>
             {/* Authenticated user profile link */}
             {userRole === "admin" && (
-              <Link to="/admin" className="text-blue-700 hover:underline">
-                Admin Panel
-              </Link>
-            )}
+  <>
+    <Link to="/admin" className="text-blue-700 hover:underline">
+      Admin Panel
+    </Link>
+    <Link to="/admin-dashboard" className="text-green-700 hover:underline ml-4">
+      Admin Dashboard
+    </Link>
+  </>
+)}
             {userRole === "business" && (
               <Link to="/profile/business" className="text-blue-700 hover:underline">
                 Business Profile

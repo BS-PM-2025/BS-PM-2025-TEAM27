@@ -37,7 +37,17 @@ from .views import (
     delete_reported_post,
     ignore_report,
     admin_delete_post,
-    my_posts
+    my_posts,
+    ApprovedBusinessListAPIView,
+    FavoriteSale,
+    FavoriteSaleDeleteView,
+    FavoriteSaleListCreateView,
+    AllSalesListView,
+    VisitorFavoriteSalesView,
+    admin_dashboard_view,
+    SiteRatingViewSet,
+    AdminDeleteSiteRatingView,
+    PublicSiteRatingListView
 )
 
 
@@ -48,6 +58,8 @@ router.register(r'profile/business/sales', SaleViewSet, basename='business-sale'
 router.register(r'sales', SaleViewSet, basename='sale')
 router.register(r'posts', PostViewSet, basename='posts')
 router.register(r'comments', CommentViewSet, basename='comments')
+router.register(r'rate-site', SiteRatingViewSet, basename='rate-site')
+
 
 urlpatterns = [
     path('register/visitor/', VisitorRegisterView.as_view(), name='visitor-register'),
@@ -82,7 +94,15 @@ urlpatterns = [
     path('admin/reported-posts/<int:report_id>/ignore/', ignore_report, name='ignore-report'),
     path('admin/posts/<int:post_id>/delete/', admin_delete_post, name='admin-delete-post'),
     path('my-posts/', my_posts),
-
+    path('businesses/approved/', ApprovedBusinessListAPIView.as_view(), name='approved-businesses'),
+    path('favorites/sales/', FavoriteSaleListCreateView.as_view(), name='favorite-sales-list'),
+    path('favorites/sales/<int:sale_id>/delete/', FavoriteSaleDeleteView.as_view(), name='favorite-sales-delete'),
+    path('sales/all/', AllSalesListView.as_view(), name='all-sales'),
+    path('profile/visitor/favorite-sales/', VisitorFavoriteSalesView.as_view(), name='visitor-favorite-sales'),
+    path('admin-dashboard/', admin_dashboard_view, name='admin-dashboard'),
+    path('rate-site/my/', SiteRatingViewSet.as_view({'get': 'retrieve'}), name='my-site-rating'),
+    path('rate-site/all/', PublicSiteRatingListView.as_view(), name='all-site-ratings'),
+    path('rate-site/<int:pk>/delete/', AdminDeleteSiteRatingView.as_view(), name='delete-site-rating'),
 ]
 
 urlpatterns += router.urls

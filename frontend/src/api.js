@@ -6,10 +6,16 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('businessAccessToken');
+    const visitorToken = localStorage.getItem('visitorAccessToken');
+    const businessToken = localStorage.getItem('businessAccessToken');
+    const adminToken = localStorage.getItem('adminAccessToken');
+
+    const token = visitorToken || businessToken || adminToken;
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)

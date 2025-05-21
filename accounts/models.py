@@ -57,6 +57,10 @@ class BusinessProfile(models.Model):
     location = models.CharField(max_length=255)
     in_jaffa = models.BooleanField()
     profile_image = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    work_time_sun_thu = models.CharField(max_length=50, blank=True, null=True)
+    work_time_fri = models.CharField(max_length=50, blank=True, null=True)
+    work_time_sat = models.CharField(max_length=50, blank=True, null=True) 
+
 
     def __str__(self):
         return f"{self.business_name} ({self.user.email})"
@@ -78,7 +82,8 @@ class Sale(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     image = models.ImageField(upload_to='sales_banners/', blank=True, null=True)
-
+    favorites_count = models.IntegerField(default=0)
+    total_favorites = models.IntegerField(default=0)
     def __str__(self):
         return f"Sale: {self.title} ({self.business.business_name})"
 
@@ -117,3 +122,20 @@ class Report(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     reason = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)    
+
+class FavoriteSale(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorite_sales')
+    sale = models.ForeignKey(Sale, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'sale')
+
+class SiteRating(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, unique=True)
+    rating = models.PositiveSmallIntegerField(choices=[(i, i) for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.email} - {self.rating} Stars"

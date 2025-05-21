@@ -13,6 +13,7 @@ const VisitorProfile = () => {
   const [preview, setPreview] = useState("");
   const [message, setMessage] = useState("");
   const [posts, setPosts] = useState([]);
+  const [favorites, setFavorites] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
 
@@ -56,12 +57,34 @@ const VisitorProfile = () => {
     }
   };
 
+  const fetchFavorites = async (token) => {
+    try {
+      const res = await axios.get(`${API_BASE}/profile/visitor/favorite-sales/`, authHeaders(token));
+      setFavorites(res.data);
+    } catch (err) {
+      console.error("Error loading favorites:", err);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem("visitorAccessToken");
     if (!token) return navigate("/login/visitor");
     fetchProfile(token);
     fetchMyPosts(token);
+    fetchFavorites(token);
   }, [navigate]);
+
+
+  
+  const handleUnsave = async (saleId) => {
+    try {
+      const token = localStorage.getItem("visitorAccessToken");
+      await axios.delete(`${API_BASE}/favorites/sales/${saleId}/delete/`, authHeaders(token));
+      setFavorites(favorites.filter(fav => fav.sale !== saleId));
+    } catch (err) {
+      console.error("Failed to unsave:", err);
+    }
+  };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -244,7 +267,39 @@ const VisitorProfile = () => {
           </div>
         )}
       </div>
+<div className="mt-10 pt-6 border-t">
+  <h2 className="text-xl font-semibold text-yellow-600 mb-4 flex items-center gap-2">
+    <span>⭐</span> Favorite Sales
+  </h2>
+
+  {favorites.length === 0 ? (
+    <p className="text-gray-500">No favorite sales yet.</p>
+  ) : (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {favorites.map((fav) => (
+        <div key={fav.id} className="border rounded shadow p-4">
+          {fav.sale_details.image && (
+            <img src={fav.sale_details.image} alt="sale" className="w-full h-40 object-cover rounded" />
+          )}
+          <h2 className="text-xl font-bold mt-2">{fav.sale_details.title}</h2>
+          <p className="text-gray-600 mb-1">{fav.sale_details.description}</p>
+          <p className="text-sm text-gray-500">
+            {fav.sale_details.start_date} - {fav.sale_details.end_date}
+          </p>
+          <button
+            onClick={() => handleUnsave(fav.sale)}
+            className="text-red-500 hover:underline mt-2"
+          >
+            Remove
+          </button>
+        </div>
+      ))}
     </div>
+  )}
+</div>
+
+          </div>
+    
   );
 };
 
