@@ -10,6 +10,7 @@ class CustomUserAdmin(UserAdmin):
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Custom Fields', {'fields': ('role',)}),
     )
+    
 admin.site.register(User, CustomUserAdmin)
 
 @admin.register(ContactMessage)
