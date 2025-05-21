@@ -10,15 +10,35 @@ const BusinessProfile = () => {
   const [newSale, setNewSale] = useState({ title: '', description: '', start_date: '', end_date: '', image: null });
   const [editSaleId, setEditSaleId] = useState(null);
   const [editSaleData, setEditSaleData] = useState({ title: '', description: '', start_date: '', end_date: '', image: null });
+const [workTime, setWorkTime] = useState({
+    sunThuStart: '',
+    sunThuEnd: '',
+    friStart: '',
+    friEnd: '',
+    satStart: '',
+    satEnd: ''
+  });
 
-  useEffect(() => {
-    api.get('profile/business/').then((res) => {
+ useEffect(() => {
+  api.get('profile/business/')
+    .then((res) => {
       const data = res.data[0];
       setProfile(data);
       setGalleryImages(data.gallery_images || []);
       setSales(data.sales || []);
-    }).catch(err => console.error('Error fetching profile:', err));
-  }, []);
+
+      setWorkTime({
+        sunThuStart: data.work_time_sun_thu?.split(' - ')[0] || '',
+        sunThuEnd: data.work_time_sun_thu?.split(' - ')[1] || '',
+        friStart: data.work_time_fri?.split(' - ')[0] || '',
+        friEnd: data.work_time_fri?.split(' - ')[1] || '',
+        satStart: data.work_time_sat?.split(' - ')[0] || '',
+        satEnd: data.work_time_sat?.split(' - ')[1] || ''
+      });
+    })
+    .catch(err => console.error('Error fetching profile:', err));
+}, []);
+
 
   const handleProfileUpdate = (data) => {
     api.put(`profile/business/${profile.id}/`, data, { headers: { 'Content-Type': 'multipart/form-data' } })
@@ -28,7 +48,27 @@ const BusinessProfile = () => {
       })
       .catch(err => console.error('Error updating profile:', err));
   };
-  
+
+  const handleWorkTimeUpdate = () => {
+    const payload = {
+  work_time_sun_thu: workTime.sunThuStart && workTime.sunThuEnd
+    ? `${workTime.sunThuStart} - ${workTime.sunThuEnd}`
+    : "Closed",
+  work_time_fri: workTime.friStart && workTime.friEnd
+    ? `${workTime.friStart} - ${workTime.friEnd}`
+    : "Closed",
+  work_time_sat: workTime.satStart && workTime.satEnd
+    ? `${workTime.satStart} - ${workTime.satEnd}`
+    : "Closed"
+};
+    api.patch(`profile/business/${profile.id}/`, payload)
+      .then((res) => {
+        setProfile(res.data);
+        alert('Work time updated successfully!');
+      })
+      .catch(err => console.error('Error updating work time:', err));
+  };
+
   const handleGalleryImageUpload = () => {
     const formData = new FormData();
     formData.append('image', newGalleryImage);
@@ -105,6 +145,38 @@ const BusinessProfile = () => {
 
       <BusinessProfileForm initialData={profile} onSubmit={handleProfileUpdate} />
 
+      <div className="max-w-5xl mx-auto p-6 bg-white shadow-lg rounded-xl space-y-10">
+      <div>
+        <h3 className="text-2xl font-semibold mb-4">Business Work Time</h3>
+
+        <div className="mb-3">
+          <label className="block font-medium text-gray-700">Sunday–Thursday</label>
+          <div className="flex gap-2">
+            <input type="time" value={workTime.sunThuStart} onChange={(e) => setWorkTime({ ...workTime, sunThuStart: e.target.value })} className="p-2 border rounded" />
+            <input type="time" value={workTime.sunThuEnd} onChange={(e) => setWorkTime({ ...workTime, sunThuEnd: e.target.value })} className="p-2 border rounded" />
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <label className="block font-medium text-gray-700">Friday</label>
+          <div className="flex gap-2">
+            <input type="time" value={workTime.friStart} onChange={(e) => setWorkTime({ ...workTime, friStart: e.target.value })} className="p-2 border rounded" />
+            <input type="time" value={workTime.friEnd} onChange={(e) => setWorkTime({ ...workTime, friEnd: e.target.value })} className="p-2 border rounded" />
+          </div>
+        </div>
+
+        <div className="mb-3">
+          <label className="block font-medium text-gray-700">Saturday</label>
+          <div className="flex gap-2">
+            <input type="time" value={workTime.satStart} onChange={(e) => setWorkTime({ ...workTime, satStart: e.target.value })} className="p-2 border rounded" />
+            <input type="time" value={workTime.satEnd} onChange={(e) => setWorkTime({ ...workTime, satEnd: e.target.value })} className="p-2 border rounded" />
+          </div>
+        </div>
+
+        <button onClick={handleWorkTimeUpdate} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">Save Work Time</button>
+      </div>
+    </div>
+
       <div>
         <h3 className="text-2xl font-semibold mb-4">Gallery</h3>
         <div className="flex gap-2 mb-4">
@@ -145,6 +217,7 @@ const BusinessProfile = () => {
                   <input type="date" name="start_date" value={editSaleData.start_date} onChange={handleEditSaleChange} className="w-full border p-2 rounded" />
                   <input type="date" name="end_date" value={editSaleData.end_date} onChange={handleEditSaleChange} className="w-full border p-2 rounded" />
                   <input type="file" name="image" onChange={handleEditSaleChange} className="w-full border rounded" />
+                  
                   <div className="flex gap-2">
                     <button onClick={handleEditSaleSubmit} className="bg-blue-600 text-white px-4 py-1 rounded">Save</button>
                     <button onClick={() => setEditSaleId(null)} className="bg-gray-400 text-white px-4 py-1 rounded">Cancel</button>
@@ -155,7 +228,17 @@ const BusinessProfile = () => {
                   <h4 className="font-bold text-lg">{sale.title}</h4>
                   <p className="text-sm text-gray-700">{sale.description}</p>
                   <p className="text-sm text-gray-500">{sale.start_date} to {sale.end_date}</p>
-                  {sale.image && <img src={sale.image} alt="Sale" className="w-32 h-32 mt-2 rounded shadow-md object-cover" />}
+
+<p className="text-sm text-blue-700">
+  💾 Saved by {sale.favorites_count} visitor{sale.favorites_count === 1 ? '' : 's'}
+</p>
+<p className="text-sm text-green-700">
+  💾 All time Saved by {sale.total_favorites ?? 0} visitor{(sale.total_favorites ?? 0) === 1 ? '' : 's'}
+</p>
+
+
+{sale.image && <img src={sale.image} alt="Sale" className="w-32 h-32 mt-2 rounded shadow-md object-cover" />}
+
                   <div className="absolute top-2 right-2 flex gap-1">
                     <button onClick={() => handleSaleEdit(sale)} className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded">Edit</button>
                     <button onClick={() => handleSaleDelete(sale.id)} className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">Delete</button>
