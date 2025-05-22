@@ -3,13 +3,18 @@ import { useNavigate, Link } from 'react-router-dom';
 import {
   Box, TextField, Button, Typography, Snackbar, Alert
 } from '@mui/material';
+import { useTranslation } from 'react-i18next';
+import Logo from '../assets/logo-jaffa.png';
 import axios from 'axios';
+
 
 const VisitorLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
+  const direction = i18n.language === 'he' || i18n.language === 'ar' ? 'rtl' : 'ltr';
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -18,7 +23,7 @@ const VisitorLogin = () => {
       localStorage.setItem('visitorAccessToken', response.data.access);
       navigate('/profile/visitor');
     } catch (err) {
-      setSnackbar({ open: true, message: 'Login failed.', severity: 'error' });
+      setSnackbar({ open: true, message: t('auth.loginFailed') || 'Login failed.', severity: 'error' });
     }
   };
 
@@ -32,24 +37,42 @@ const VisitorLogin = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        p: 2
+        p: 2,
+        direction: direction,
       }}
     >
       <Box
         sx={{
           maxWidth: 400,
           width: '100%',
-          bgcolor: 'rgba(44, 47, 56, 0.9)',
+          bgcolor: '#fff',
           p: 4,
-          borderRadius: 2,
-          color: '#fff',
-          boxShadow: 3
+          borderRadius: 6,
+          textAlign: 'center',
+          boxShadow: 6,
+          color: '#1976d2',
         }}
       >
-        <Typography variant="h5" mb={2}>Visitor Login</Typography>
+        <Box
+  mb={2}
+  sx={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <img src={Logo} alt="Jaffa Logo" style={{ height: 80, marginBottom: 6 }} />
+</Box>
+
+
+        <Typography variant="h5" fontWeight="bold" mb={2}>
+          {t("auth.visitorLogin") || "Visitor Login"}
+        </Typography>
+
         <form onSubmit={handleLogin}>
           <TextField
-            label="Email"
+            label={t("auth.email") || "Email"}
             type="email"
             fullWidth
             required
@@ -57,38 +80,54 @@ const VisitorLogin = () => {
             onChange={(e) => setEmail(e.target.value)}
             sx={{
               mb: 2,
-              input: { color: '#fff' },
-              label: { color: '#ccc' },
+              input: { color: '#000' },
+              label: { color: '#1976d2' },
               '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: '#555' },
-                '&:hover fieldset': { borderColor: '#888' },
+                borderRadius: 25,
+                '& fieldset': { borderColor: '#1976d2' },
+                '&:hover fieldset': { borderColor: '#1565c0' },
+                '&.Mui-focused fieldset': { borderColor: '#0d47a1' },
               },
             }}
           />
+
           <TextField
-            label="Password"
+            label={t("auth.password") || "Password"}
             type="password"
             fullWidth
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             sx={{
-              mb: 1,
-              input: { color: '#fff' },
-              label: { color: '#ccc' },
+              mb: 2,
+              input: { color: '#000' },
+              label: { color: '#1976d2' },
               '& .MuiOutlinedInput-root': {
-                '& fieldset': { borderColor: '#555' },
-                '&:hover fieldset': { borderColor: '#888' },
+                borderRadius: 25,
+                '& fieldset': { borderColor: '#1976d2' },
+                '&:hover fieldset': { borderColor: '#1565c0' },
+                '&.Mui-focused fieldset': { borderColor: '#0d47a1' },
               },
             }}
           />
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-            <Link to="/forgot-password" style={{ color: '#90caf9', fontSize: '0.9rem', textDecoration: 'none' }}>
-              Forgot Password?
+            <Link to="/forgot-password" style={{ color: '#1976d2', fontSize: '0.9rem', textDecoration: 'none' }}>
+              {t("Forgot Password") || "Forgot Password?"}
             </Link>
           </Box>
-          <Button type="submit" variant="contained" fullWidth sx={{ backgroundColor: '#1976d2' }}>
-            Login
+
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{
+              backgroundColor: '#1976d2',
+              borderRadius: 25,
+              fontWeight: 'bold',
+            }}
+          >
+            {t("auth.login") || "Login"}
           </Button>
         </form>
 
