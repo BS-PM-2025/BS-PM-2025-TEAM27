@@ -219,8 +219,8 @@ const [workTime, setWorkTime] = useState({
                   <input type="file" name="image" onChange={handleEditSaleChange} className="w-full border rounded" />
                   
                   <div className="flex gap-2">
-                    <button onClick={handleEditSaleSubmit} className="bg-blue-600 text-white px-4 py-1 rounded">Save</button>
-                    <button onClick={() => setEditSaleId(null)} className="bg-gray-400 text-white px-4 py-1 rounded">Cancel</button>
+                    <button onClick={handleEditSaleSubmit} className="bg-blue-600 text-white px-4 py-1 rounded">Save </button>
+                    <button onClick={() => setEditSaleId(null)} className="bg-gray-400 text-white px-4 py-1 rounded">Cancel </button>
                   </div>
                 </div>
               ) : (
@@ -236,10 +236,6 @@ const [workTime, setWorkTime] = useState({
   💾 All time Saved by {sale.total_favorites ?? 0} visitor{(sale.total_favorites ?? 0) === 1 ? '' : 's'}
 </p>
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 0c8c190afb5c3d1a2f7e2bf1a1e50f901986222b
 {sale.image && <img src={sale.image} alt="Sale" className="w-32 h-32 mt-2 rounded shadow-md object-cover" />}
 
                   <div className="absolute top-2 right-2 flex gap-1">
