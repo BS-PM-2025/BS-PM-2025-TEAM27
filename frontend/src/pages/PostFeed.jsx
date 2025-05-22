@@ -19,7 +19,7 @@ const PostFeed = () => {
   const [error, setError] = useState('');
   const [commentText, setCommentText] = useState({});
   const [openPost, setOpenPost] = useState(null);
-
+ 
   const token =
     localStorage.getItem('visitorAccessToken') ||
     localStorage.getItem('access');
@@ -103,7 +103,10 @@ const PostFeed = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white py-10 px-4">
+<div className="min-h-screen bg-blue-50 py-10 px-4">
+        <h2 className="text-3xl font-bold text-center text-blue-800 mb-8">
+  📸 Community Feed
+</h2>
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
         {posts.map((post) => (
           <div
