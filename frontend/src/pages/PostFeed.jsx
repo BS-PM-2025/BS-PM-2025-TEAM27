@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import {
   Dialog,
   DialogTitle,
@@ -10,8 +9,9 @@ import {
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import api from '../api';
 
-const API = 'http://localhost:8000/api';
+const userRole = localStorage.getItem("userRole");
 const user = JSON.parse(localStorage.getItem('user')) || {};
 
 const PostFeed = () => {
@@ -19,15 +19,10 @@ const PostFeed = () => {
   const [error, setError] = useState('');
   const [commentText, setCommentText] = useState({});
   const [openPost, setOpenPost] = useState(null);
- 
-  const token =
-    localStorage.getItem('visitorAccessToken') ||
-    localStorage.getItem('access');
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get(`${API}/posts/`, { headers });
+      const res = await api.get('posts/');
       setPosts(res.data);
     } catch (err) {
       setError('Failed to load posts');
@@ -40,7 +35,7 @@ const PostFeed = () => {
 
   const handleLike = async (id) => {
     try {
-      await axios.post(`${API}/posts/${id}/like/`, {}, { headers });
+      await api.post(`posts/${id}/like/`);
       fetchPosts();
     } catch {
       setError('Failed to like post');
@@ -49,7 +44,7 @@ const PostFeed = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${API}/posts/${id}/`, { headers });
+      await api.delete(`posts/${id}/`);
       fetchPosts();
     } catch {
       setError('Failed to delete post');
@@ -58,15 +53,7 @@ const PostFeed = () => {
 
   const handleAdminDeletePost = async (postId) => {
     try {
-      const token = localStorage.getItem('adminAccessToken');
-      await axios.delete(
-        `http://127.0.0.1:8000/api/admin/posts/${postId}/delete/`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await api.delete(`admin/posts/${postId}/delete/`);
       alert('Post deleted.');
       fetchPosts();
     } catch (error) {
@@ -78,11 +65,7 @@ const PostFeed = () => {
   const handleComment = async (id) => {
     if (!commentText[id]) return;
     try {
-      await axios.post(
-        `${API}/posts/${id}/comment/`,
-        { content: commentText[id] },
-        { headers }
-      );
+      await api.post(`posts/${id}/comment/`, { content: commentText[id] });
       setCommentText({ ...commentText, [id]: '' });
       fetchPosts();
     } catch {
@@ -94,7 +77,7 @@ const PostFeed = () => {
     const reason = prompt('Please enter a reason for reporting this post:');
     if (!reason) return;
     try {
-      await axios.post(`${API}/posts/${id}/report/`, { reason }, { headers });
+      await api.post(`posts/${id}/report/`, { reason });
       alert('Post reported successfully');
     } catch (err) {
       console.error(err.response?.data || err);
@@ -103,10 +86,10 @@ const PostFeed = () => {
   };
 
   return (
-<div className="min-h-screen bg-blue-50 py-10 px-4">
-        <h2 className="text-3xl font-bold text-center text-blue-800 mb-8">
-  📸 Community Feed
-</h2>
+    <div className="min-h-screen bg-blue-50 py-10 px-4">
+      <h2 className="text-3xl font-bold text-center text-blue-800 mb-8">
+        📸 Community Feed
+      </h2>
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
         {posts.map((post) => (
           <div
@@ -129,11 +112,11 @@ const PostFeed = () => {
               </span>
             </div>
             <div className="absolute bottom-3 left-3 flex items-center gap-3">
-              {(post.is_owner || user?.is_admin) && (
+              {(post.is_owner || userRole === "admin") && (
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    user?.is_admin
+                    userRole === "admin"
                       ? handleAdminDeletePost(post.id)
                       : handleDelete(post.id);
                   }}
@@ -167,7 +150,7 @@ const PostFeed = () => {
         ))}
       </div>
 
-      {/* Pop-up Dialog */}
+      {/* Post Popup Dialog */}
       <Dialog
         open={!!openPost}
         onClose={() => setOpenPost(null)}
@@ -176,11 +159,7 @@ const PostFeed = () => {
       >
         <DialogTitle>{openPost?.title || openPost?.user}</DialogTitle>
         <DialogContent>
-          <img
-            src={openPost?.image}
-            alt="Post"
-            className="w-full rounded mb-4"
-          />
+          <img src={openPost?.image} alt="Post" className="w-full rounded mb-4" />
           <p className="mb-4">{openPost?.content}</p>
 
           <div className="max-h-60 overflow-y-auto mb-4 pr-2">

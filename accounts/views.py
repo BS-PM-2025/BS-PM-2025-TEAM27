@@ -298,9 +298,10 @@ class SaleViewSet(viewsets.ModelViewSet):
     serializer_class = SaleSerializer
 
     def get_permissions(self):
-        if self.request.method == "DELETE":
-            return [IsAdminUser()]
+        if self.action == 'destroy':
+            return [IsAuthenticated()]
         return [IsAuthenticated()]
+
 
     def get_queryset(self):
         user = self.request.user
@@ -315,7 +316,12 @@ class SaleViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save()
 
-
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.business.user != request.user:
+            return Response({'detail': 'You do not have permission to delete this sale.'}, status=403)
+        self.perform_destroy(instance)
+        return Response(status=204)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
