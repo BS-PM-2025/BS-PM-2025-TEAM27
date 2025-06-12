@@ -24,7 +24,7 @@ import BusinessDirectory from "./pages/BusinessDirectory";
 import SalesPage from './pages/SalesPage';
 import AdminDashboard from './pages/AdminDashboard';
 import RateSite from './pages/RateSite';
-
+import TelAvivGoogleMap from "./pages/TelAvivGoogleMap"; 
 function App() {
   const { i18n } = useTranslation();
 
@@ -60,10 +60,12 @@ function App() {
           <Route path="/sales" element={<SalesPage />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
           <Route path="/rate" element={<RateSite />} />
-        </Routes>
+<         Route path="/tel-aviv-map" element={<TelAvivGoogleMap />} />
+</Routes>
       </div>
     </Router>
   );
 }
 
 export default App;
+
