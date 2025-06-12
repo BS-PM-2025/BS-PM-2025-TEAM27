@@ -1,10 +1,10 @@
+from datetime import date
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from rest_framework.test import APIClient
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.urls import reverse
-from datetime import date
-
+from rest_framework.test import APITestCase, APIClient
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import status
 from accounts.models import Sale, ContactMessage, Post, FavoriteSale, BusinessProfile
 
 User = get_user_model()
@@ -55,7 +55,7 @@ class FunctionalViewTests(TestCase):
 
     def test_post_create_and_list(self):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.user_token}')
-        post_url = reverse('posts-list')  # from router
+        post_url = reverse('posts-list')
         post_response = self.client.post(post_url, {'content': 'Hello world!'})
         self.assertEqual(post_response.status_code, 201)
 
@@ -69,7 +69,6 @@ class FunctionalViewTests(TestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertIn('total_users', response.data)
-
 
     def test_favorite_sale_add(self):
         sale = Sale.objects.create(
@@ -87,7 +86,6 @@ class FunctionalViewTests(TestCase):
             format='json'
         )
         self.assertEqual(response.status_code, 201)
-
 
     def test_contact_us_authenticated(self):
         url = reverse('contact')
@@ -130,3 +128,63 @@ class FunctionalViewTests(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.user_token}')
         fav_response = self.client.get(fav_url)
         self.assertEqual(fav_response.status_code, 200)
+
+class AdminDeletePostTest(APITestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            username='adminuser', email='admin@example.com', password='adminpass'
+        )
+        self.post = Post.objects.create(user=self.admin, content='Test post')
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+
+    def test_admin_can_delete_post(self):
+        url = reverse('admin-delete-post', args=[self.post.id])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(Post.objects.filter(id=self.post.id).exists())
+
+    def test_delete_nonexistent_post(self):
+        url = reverse('admin-delete-post', args=[999])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data['detail'], 'Post not found.')
+
+class DeleteSaleTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='bizuser', email='biz@example.com', password='bizpass', is_business=True
+        )
+        self.business = BusinessProfile.objects.create(
+            user=self.user,
+            business_name="BizName",
+            category="shop",
+            phone="0500000000",
+            location="Jaffa",
+            in_jaffa=True
+        )
+        self.sale = Sale.objects.create(
+            business=self.business,
+            title='Discount 50%',
+            description='Big Sale',
+            start_date=date(2024, 5, 1),
+            end_date=date(2025, 5, 1)
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_business_user_can_delete_own_sale(self):
+        url = reverse('delete-sale', args=[self.sale.pk])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['message'], 'Sale deleted')
+        self.assertFalse(Sale.objects.filter(pk=self.sale.pk).exists())
+
+    def test_cannot_delete_other_business_sale(self):
+        other_user = User.objects.create_user(
+            username='otherbiz', email='other@example.com', password='otherpass', is_business=True
+        )
+        self.client.force_authenticate(user=other_user)
+        url = reverse('delete-sale', args=[self.sale.pk])
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
