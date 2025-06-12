@@ -14,8 +14,6 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from datetime import datetime, timedelta
 from .models import VisitorProfile, User
-import openai
-from openai import OpenAI
 from .serializers import UserAdminSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
@@ -26,8 +24,6 @@ from .models import BusinessProfile, GalleryImage, Sale,ContactMessage,BusinessP
 from .serializers import BusinessProfileSerializer, GalleryImageSerializer, SaleSerializer,ContactMessageSerializer
 from rest_framework import viewsets, permissions
 from django.conf import settings
-from .serializers import OfferSerializer, OfferRedemptionSerializer
-
 from .models import Post, Like, Comment, Report,FavoriteSale,SiteRating
 from .serializers import PostSerializer, LikeSerializer, CommentSerializer, ReportSerializer
 from .serializers import (
@@ -302,10 +298,9 @@ class SaleViewSet(viewsets.ModelViewSet):
     serializer_class = SaleSerializer
 
     def get_permissions(self):
-        if self.action == 'destroy':
-            return [IsAuthenticated()]
+        if self.request.method == "DELETE":
+            return [IsAdminUser()]
         return [IsAuthenticated()]
-
 
     def get_queryset(self):
         user = self.request.user
@@ -320,12 +315,7 @@ class SaleViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         serializer.save()
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance.business.user != request.user:
-            return Response({'detail': 'You do not have permission to delete this sale.'}, status=403)
-        self.perform_destroy(instance)
-        return Response(status=204)
+
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -374,13 +364,7 @@ class PostListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        instance = serializer.save(user=self.request.user)
-        user = self.request.user
-
-        if hasattr(user, 'visitor_profile'):
-            profile = user.visitor_profile
-            profile.tokens += 20
-            profile.save()
+        serializer.save(user=self.request.user)
 
 class PostDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Post.objects.all()
@@ -444,10 +428,7 @@ class PostViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
-        instance = serializer.save(user=self.request.user)
-        if hasattr(self.request.user, 'visitor_profile'):
-            profile = self.request.user.visitor_profile
-            profile.save()
+        serializer.save(user=self.request.user)
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
@@ -592,14 +573,7 @@ class SiteRatingViewSet(viewsets.ModelViewSet):
         return SiteRating.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        if not SiteRating.objects.filter(user=self.request.user).exists():
-            serializer.save(user=self.request.user)
-            if hasattr(self.request.user, 'visitor_profile'):
-                profile = self.request.user.visitor_profile
-                profile.tokens += 100
-                profile.save()
-        else:
-            raise ValidationError("You have already rated the site.")
+        serializer.save(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         try:
@@ -617,122 +591,5 @@ class PublicSiteRatingListView(ListAPIView):
 class AdminDeleteSiteRatingView(DestroyAPIView):
     queryset = SiteRating.objects.all()
     serializer_class = SiteRatingSerializer
-
-
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-@api_view(['POST'])
-def yaffa_bot(request):
-    user_msg = request.data.get("message", "")
-    try:
-        chat_completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant for tourists visiting Jaffa."},
-                {"role": "user", "content": user_msg}
-            ]
-        )
-        reply = chat_completion.choices[0].message.content.strip()
-        return Response({"reply": reply})
-    except Exception as e:
-        print("OpenAI Error:", e)
-        return Response({"reply": "Sorry, something went wrong."}, status=500)
-
-
-from .models import Offer, OfferRedemption
-import random
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def redeem_offer(request, offer_id):
-    offer = get_object_or_404(Offer, id=offer_id)
-    user = request.user
-    profile = getattr(user, 'visitor_profile', None)
-
-    if not profile:
-        return Response({"detail": "Only visitors can redeem offers."}, status=403)
-
-    if OfferRedemption.objects.filter(user=user, offer=offer).exists():
-        return Response({"detail": "You already redeemed this offer."}, status=400)
-
-    if profile.tokens < offer.price:
-        return Response({"detail": "Not enough tokens."}, status=400)
-
-    profile.tokens -= offer.price
-    profile.save()
-
-    code = f"{random.randint(0, 99999):05}" 
-
-    OfferRedemption.objects.create(user=user, offer=offer, code=code)
-
-    send_mail(
-        subject="🎁 Your Offer Redemption Code",
-        message=f"You redeemed the offer: {offer.title}\nYour code: {code}\nShow this to the business in person.",
-        from_email="noreply@jaffaexplorer.com",
-        recipient_list=[user.email],
-    )
-
-    if offer.business and offer.business.email:
-        send_mail(
-            subject="🔔 A visitor redeemed your offer!",
-            message=(
-                f"The following offer was redeemed:\n"
-                f"Offer: {offer.title}\n"
-                f"Visitor: {user.username} ({user.email})\n"
-                f"Redemption Code: {code}\n\n"
-                f"Please expect the visitor to present this code."
-            ),
-            from_email="noreply@jaffaexplorer.com",
-            recipient_list=[offer.business.email],
-        )
-
-    return Response({"message": "Offer redeemed successfully!", "code": code})
-
-
-
-class OfferViewSet(viewsets.ModelViewSet):
-    queryset = Offer.objects.all()
-    serializer_class = OfferSerializer
     permission_classes = [IsAdminUser]
 
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            print("Offer validation errors:", serializer.errors) 
-            return Response(serializer.errors, status=400)
-        self.perform_create(serializer)
-        return Response(serializer.data, status=201)
-
-
-class AvailableOffersView(generics.ListAPIView):
-    queryset = Offer.objects.all().order_by('-created_at')
-    serializer_class = OfferSerializer
-    permission_classes = [permissions.AllowAny]
-
-
-class MyRedemptionsView(generics.ListAPIView):
-    serializer_class = OfferRedemptionSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return OfferRedemption.objects.filter(user=self.request.user).order_by('-redeemed_at')
-
-class ApprovedBusinessListAPIView(generics.ListAPIView):
-    serializer_class = BusinessProfileSerializer
-    permission_classes = [AllowAny]
-
-    def get_queryset(self):
-        queryset = BusinessProfile.objects.filter(user__is_approved=True)
-        category = self.request.query_params.get('category')
-        open_on_saturday = self.request.query_params.get('open_on_saturday')
-
-        if category:
-            queryset = queryset.filter(category__iexact=category)
-        if open_on_saturday == 'true':
-            queryset = queryset.exclude(work_time_sat__iexact='Closed')
-
-        return queryset
-    

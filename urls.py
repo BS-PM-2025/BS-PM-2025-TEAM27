@@ -47,12 +47,7 @@ from .views import (
     admin_dashboard_view,
     SiteRatingViewSet,
     AdminDeleteSiteRatingView,
-    PublicSiteRatingListView,
-    yaffa_bot,
-    OfferViewSet,
-    AvailableOffersView,
-    redeem_offer,
-    MyRedemptionsView
+    PublicSiteRatingListView
 )
 
 
@@ -64,7 +59,6 @@ router.register(r'sales', SaleViewSet, basename='sale')
 router.register(r'posts', PostViewSet, basename='posts')
 router.register(r'comments', CommentViewSet, basename='comments')
 router.register(r'rate-site', SiteRatingViewSet, basename='rate-site')
-router.register(r'offers', OfferViewSet, basename='offer')
 
 
 urlpatterns = [
@@ -107,12 +101,8 @@ urlpatterns = [
     path('profile/visitor/favorite-sales/', VisitorFavoriteSalesView.as_view(), name='visitor-favorite-sales'),
     path('admin-dashboard/', admin_dashboard_view, name='admin-dashboard'),
     path('rate-site/my/', SiteRatingViewSet.as_view({'get': 'retrieve'}), name='my-site-rating'),
-    path("rate-site/public/", PublicSiteRatingListView.as_view(), name="public-site-ratings"),
+    path('rate-site/all/', PublicSiteRatingListView.as_view(), name='all-site-ratings'),
     path('rate-site/<int:pk>/delete/', AdminDeleteSiteRatingView.as_view(), name='delete-site-rating'),
-    path('offers/available/', AvailableOffersView.as_view(), name='available-offers'),
-    path('offers/<int:offer_id>/redeem/', redeem_offer, name='redeem-offer'),
-    path('offers/my-redemptions/', MyRedemptionsView.as_view(), name='my-redemptions'),
-    path("yaffabot/", yaffa_bot),
 ]
 
 urlpatterns += router.urls
