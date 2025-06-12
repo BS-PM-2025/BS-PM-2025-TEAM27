@@ -4,7 +4,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth import get_user_model
 from django.conf import settings
-import random
 
 
 class User(AbstractUser):
@@ -41,10 +40,10 @@ class User(AbstractUser):
 
 
 class VisitorProfile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="visitor_profile")
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     phone_number = models.CharField(max_length=10)
     profile_image = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
-    tokens = models.PositiveIntegerField(default=0)
+
     def __str__(self):
         return self.user.username
 
@@ -140,47 +139,3 @@ class SiteRating(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.rating} Stars"
-    
-class Offer(models.Model):
-    title = models.CharField(max_length=100)
-    description = models.TextField()
-    price = models.PositiveIntegerField()
-    image = models.ImageField(upload_to='offer_images/', blank=True, null=True)
-    
-    business = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        limit_choices_to={'is_business': True},
-        null=True,
-        blank=True  
-    )
-    
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='offers_created',
-        limit_choices_to={'is_admin': True}
-    )
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.title} - {self.price} tokens"
-
-
-class OfferRedemption(models.Model):
-    offer = models.ForeignKey(Offer, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    code = models.CharField(max_length=5, editable=False)
-    redeemed_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user', 'offer')
-
-    def save(self, *args, **kwargs):
-        if not self.code:
-            self.code = ''.join(random.choices(string.digits, k=5))
-        super().save(*args, **kwargs)
-
-    def __str__(self):
-        return f"{self.user.email} redeemed {self.offer.title} (code: {self.code})"

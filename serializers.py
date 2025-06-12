@@ -9,7 +9,8 @@ from django.conf import settings
 from accounts.models import VisitorProfile, BusinessProfile, User
 from datetime import timedelta
 from .models import BusinessProfile, GalleryImage, Sale,ContactMessage
-from .models import Post, Like, Comment, Report,FavoriteSale,SiteRating,Offer, OfferRedemption
+from .models import Post, Like, Comment, Report, FavoriteSale, SiteRating
+
 
 class VisitorRegisterSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(write_only=True, label="Confirm Password")
@@ -195,13 +196,12 @@ class VisitorProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source='user.full_name', required=False)
     address = serializers.CharField(source='user.address', required=False)
     profile_image_url = serializers.SerializerMethodField()
-    tokens = serializers.IntegerField(read_only=True)    
-    
+
     class Meta:
         model = VisitorProfile
         fields = [
             'username', 'email', 'full_name', 'address',
-            'phone_number', 'profile_image', 'profile_image_url','tokens'
+            'phone_number', 'profile_image', 'profile_image_url'
         ]
 
     def get_profile_image_url(self, obj):
@@ -271,11 +271,10 @@ class SaleSerializer(serializers.ModelSerializer):
 class BusinessProfileSerializer(serializers.ModelSerializer):
     gallery_images = GalleryImageSerializer(many=True, read_only=True)
     sales = SaleSerializer(many=True, read_only=True)
-    user_id = serializers.IntegerField(source='user.id', read_only=True)
 
     class Meta:
         model = BusinessProfile
-        fields = ['id', 'business_name', 'description', 'category', 'phone', 'location', 'profile_image', 'gallery_images', 'sales','work_time_sun_thu', 'work_time_fri', 'work_time_sat','user_id']
+        fields = ['id', 'business_name', 'description', 'category', 'phone', 'location', 'profile_image', 'gallery_images', 'sales','work_time_sun_thu', 'work_time_fri', 'work_time_sat']
 
 
 class ContactMessageSerializer(serializers.ModelSerializer):
@@ -345,44 +344,3 @@ class SiteRatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteRating
         fields = ['rating', 'comment']
-
-
-class OfferSerializer(serializers.ModelSerializer):
-    business_name = serializers.SerializerMethodField()
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
-
-    class Meta:
-        model = Offer
-        fields = '__all__'
-
-    def get_business_name(self, obj):
-        if obj.business and hasattr(obj.business, 'businessprofile'):
-            return obj.business.businessprofile.business_name
-        elif obj.business:
-            return obj.business.email
-        return "None"
-
-
-class OfferRedemptionSerializer(serializers.ModelSerializer):
-    offer_title = serializers.CharField(source='offer.title', read_only=True)
-    offer_price = serializers.IntegerField(source='offer.price', read_only=True)
-    business_name = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = OfferRedemption
-        fields = ['id', 'offer_title', 'offer_price', 'code', 'redeemed_at', 'business_name', 'image']
-
-    def get_business_name(self, obj):
-        if obj.offer.business and hasattr(obj.offer.business, 'businessprofile'):
-            return obj.offer.business.businessprofile.business_name
-        elif obj.offer.business:
-            return obj.offer.business.email
-        return "Unknown"
-
-    def get_image(self, obj):
-        request = self.context.get("request")
-        if obj.offer.image:
-            return request.build_absolute_uri(obj.offer.image.url)
-        return None
-
