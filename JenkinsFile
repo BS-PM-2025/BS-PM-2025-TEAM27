@@ -5,7 +5,6 @@ pipeline {
     NODE_VERSION = 'v18.19.1'
     NODE_DIR = 'local_node'
     PATH = "${env.WORKSPACE}/${NODE_DIR}/bin:${env.PATH}"
-    OPENAI_API_KEY = credentials('openai-api-key') // Secure Jenkins credential
   }
 
   stages {
@@ -17,21 +16,22 @@ pipeline {
 
     stage('Inject .env File') {
       steps {
-        echo '🛡️ Writing .env file with secrets...'
-        writeFile file: '.env', text: "OPENAI_API_KEY=${OPENAI_API_KEY}\n"
+        echo '🛡️ Injecting secrets from Jenkins (not from Git)...'
+        // 👇 This reads the secret from Jenkins credentials
+        withCredentials([string(credentialsId: 'openai-api-key', variable: 'OPENAI_API_KEY')]) {
+          writeFile file: '.env', text: "OPENAI_API_KEY=${OPENAI_API_KEY}\n"
+        }
       }
     }
 
     stage('Check Workspace') {
       steps {
-        echo '📂 Workspace contents:'
         sh 'ls -la'
       }
     }
 
     stage('Install Python Dependencies') {
       steps {
-        echo '🐍 Installing backend dependencies...'
         sh '''
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements.txt
@@ -41,14 +41,12 @@ pipeline {
 
     stage('Run Backend Tests') {
       steps {
-        echo '🧪 Running Django unit tests...'
         sh 'python3 manage.py test accounts --settings=backend.settings'
       }
     }
 
     stage('Setup Node.js Locally') {
       steps {
-        echo '⬇️ Downloading Node.js...'
         sh '''
           rm -rf ${NODE_DIR} node-${NODE_VERSION}-linux-x64
           curl -O https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz
@@ -61,7 +59,6 @@ pipeline {
     stage('Install Frontend Dependencies') {
       steps {
         dir('frontend') {
-          echo '📦 Installing frontend dependencies...'
           sh 'npm install'
         }
       }
@@ -70,7 +67,6 @@ pipeline {
     stage('Build Frontend') {
       steps {
         dir('frontend') {
-          echo '🔧 Building frontend...'
           sh 'CI=false npm run build'
         }
       }
@@ -78,7 +74,6 @@ pipeline {
 
     stage('Archive Frontend Build') {
       steps {
-        echo '🗃️ Archiving frontend build...'
         archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
@@ -89,10 +84,10 @@ pipeline {
       echo '✅ Build successful!'
     }
     failure {
-      echo '❌ Build failed. Check the logs.'
+      echo '❌ Build failed.'
     }
     always {
-      echo '🧹 Pipeline finished.'
+      echo '🧹 Pipeline done.'
     }
   }
 }
