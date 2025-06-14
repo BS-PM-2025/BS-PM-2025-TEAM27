@@ -3,15 +3,17 @@ from datetime import timedelta
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SESSION_ENGINE = "django.contrib.sessions.backends.db"
+load_dotenv(os.path.join(BASE_DIR, '.env'))
+
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    raise ValueError("❌ OPENAI_API_KEY is missing from environment or .env file!")
 
 SECRET_KEY = 'A83dUUkCc0nUWovUwCVTOCMa6IBUtuSG0r9XoYUU'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '10.100.102.6']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -85,7 +87,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_FILE_STORAGE = 'django.core.files.storage.FileSystemStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-DEFAULT_FROM_EMAIL = 'jaffaexplorer@gmail.com'
+DEFAULT_FROM_EMAIL = 'Jaffa Explorer <jaffaexplorer@gmail.com>'
 ADMIN_EMAIL = 'jaffaexplorer@gmail.com'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
@@ -93,7 +95,6 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'jaffaexplorer@gmail.com'
 EMAIL_HOST_PASSWORD = 'flxvjcywtnqszvit'
-DEFAULT_FROM_EMAIL = 'Jaffa Explorer <jaffaexplorer@gmail.com>'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
