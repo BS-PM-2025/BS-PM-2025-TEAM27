@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git credentialsId: 'c376752b-6692-4a69-a0d6-8550841e9ee5', url: 'https://github.com/BS-PM-2025/BS-PM-2025-TEAM27'
+        git branch: 'main', credentialsId: 'your-credential-id', url: 'https://github.com/BS-PM-2025/BS-PM-2025-TEAM27.git'
       }
     }
 
