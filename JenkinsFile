@@ -10,8 +10,8 @@ pipeline {
 
     stage('Check Workspace') {
       steps {
-        echo '📂 Workspace contents:'
-        sh 'ls -R'
+        echo '📂 Listing workspace files...'
+        sh 'ls -la'
       }
     }
 
@@ -19,17 +19,17 @@ pipeline {
       steps {
         echo '🐍 Installing backend dependencies...'
         sh '''
-          pip install --upgrade pip
-          pip install -r backend/requirements.txt
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements.txt
         '''
       }
     }
 
-    stage('Run Backend Tests') {
+    stage('Run Django Tests') {
       steps {
-        echo '🧪 Running backend unit tests...'
+        echo '🧪 Running Django unit tests...'
         sh '''
-          python manage.py test accounts --settings=backend.settings
+          python3 manage.py test accounts --settings=backend.settings
         '''
       }
     }
@@ -46,7 +46,7 @@ pipeline {
     stage('Build Frontend') {
       steps {
         dir('frontend') {
-          echo '🔧 Building frontend...'
+          echo '🛠️ Building frontend...'
           sh 'npm run build'
         }
       }
@@ -54,7 +54,7 @@ pipeline {
 
     stage('Archive Frontend Build') {
       steps {
-        echo '🗃️ Archiving frontend build...'
+        echo '🗂️ Archiving frontend artifacts...'
         archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
@@ -62,13 +62,13 @@ pipeline {
 
   post {
     success {
-      echo '✅ All stages completed successfully!'
+      echo '✅ Build and test pipeline completed successfully!'
     }
     failure {
-      echo '❌ Build failed. Please check logs.'
+      echo '❌ Build failed. Check logs for errors.'
     }
     always {
-      echo '🧹 Cleaning up workspace...'
+      echo '🧹 Finished pipeline execution.'
     }
   }
 }
