@@ -5,12 +5,20 @@ pipeline {
     NODE_VERSION = 'v18.19.1'
     NODE_DIR = 'local_node'
     PATH = "${env.WORKSPACE}/${NODE_DIR}/bin:${env.PATH}"
+    OPENAI_API_KEY = credentials('openai-api-key') // Secure Jenkins credential
   }
 
   stages {
     stage('Checkout') {
       steps {
         git branch: 'main', url: 'https://github.com/BS-PM-2025/BS-PM-2025-TEAM27.git'
+      }
+    }
+
+    stage('Inject .env File') {
+      steps {
+        echo '🛡️ Writing .env file with secrets...'
+        writeFile file: '.env', text: "OPENAI_API_KEY=${OPENAI_API_KEY}\n"
       }
     }
 
