@@ -4,7 +4,7 @@ pipeline {
   environment {
     NODE_VERSION = 'v18.19.1'
     NODE_DIR = 'local_node'
-    PATH = "./${NODE_DIR}/bin:$PATH"
+    PATH = "${env.WORKSPACE}/${NODE_DIR}/bin:${env.PATH}"
   }
 
   stages {
@@ -38,9 +38,9 @@ pipeline {
       }
     }
 
-    stage('Setup Node Locally') {
+    stage('Setup Node.js Locally') {
       steps {
-        echo '⬇️ Downloading Node.js locally...'
+        echo '⬇️ Downloading Node.js...'
         sh '''
           rm -rf ${NODE_DIR} node-${NODE_VERSION}-linux-x64
           curl -O https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz
@@ -81,7 +81,7 @@ pipeline {
       echo '✅ Build successful!'
     }
     failure {
-      echo '❌ Build failed. See logs above.'
+      echo '❌ Build failed. Check the logs.'
     }
     always {
       echo '🧹 Pipeline finished.'
