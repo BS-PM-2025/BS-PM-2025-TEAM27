@@ -2,29 +2,29 @@ pipeline {
   agent any
 
   environment {
-    NODE_VERSION = 'v18.19.1'
-    NODE_DIR = 'local_node'
-    PATH = "${env.WORKSPACE}/${NODE_DIR}/bin:${env.PATH}"
+    DJANGO_SETTINGS_MODULE = "backend.settings"
+    PYTHONUNBUFFERED = 1
   }
 
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'main', url: 'https://github.com/BS-PM-2025/BS-PM-2025-TEAM27.git'
+        git credentialsId: 'c376752b-6692-4a69-a0d6-8550841e9ee5', url: 'https://github.com/BS-PM-2025/BS-PM-2025-TEAM27'
       }
     }
 
     stage('Check .env') {
       steps {
-        echo '📂 Verifying .env file presence...'
-        sh 'ls -la .env || echo ".env file is missing!"'
+        echo "📂 Verifying .env file presence..."
+        sh 'ls -la .env'
       }
     }
 
     stage('Install Python Dependencies') {
       steps {
-        echo '🐍 Installing backend dependencies...'
+        echo "🐍 Installing backend dependencies..."
         sh '''
+          cd BS-PM-2025-TEAM27
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements.txt
         '''
@@ -33,58 +33,58 @@ pipeline {
 
     stage('Run Backend Tests') {
       steps {
-        echo '🧪 Running Django unit tests...'
-        sh 'python3 manage.py test accounts --settings=backend.settings'
+        echo "🧪 Running Django unit tests..."
+        sh '''
+          cd BS-PM-2025-TEAM27
+          python3 manage.py test accounts --settings=backend.settings
+        '''
       }
     }
 
     stage('Setup Node.js Locally') {
       steps {
-        echo '⬇️ Downloading Node.js...'
+        echo "⚙️ Installing Node.js..."
         sh '''
-          rm -rf ${NODE_DIR} node-${NODE_VERSION}-linux-x64
-          curl -O https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz
-          tar -xf node-${NODE_VERSION}-linux-x64.tar.xz
-          mv node-${NODE_VERSION}-linux-x64 ${NODE_DIR}
+          cd BS-PM-2025-TEAM27/frontend
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
         '''
       }
     }
 
     stage('Install Frontend Dependencies') {
       steps {
-        dir('frontend') {
-          echo '📦 Installing frontend dependencies...'
-          sh 'npm install'
-        }
+        echo "📦 Installing frontend dependencies..."
+        sh '''
+          cd BS-PM-2025-TEAM27/frontend
+          npm install
+        '''
       }
     }
 
     stage('Build Frontend') {
       steps {
-        dir('frontend') {
-          echo '🔧 Building frontend...'
-          sh 'CI=false npm run build'
-        }
+        echo "🏗️ Building frontend..."
+        sh '''
+          cd BS-PM-2025-TEAM27/frontend
+          npm run build
+        '''
       }
     }
 
     stage('Archive Frontend Build') {
       steps {
-        echo '🗃️ Archiving frontend build...'
-        archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
+        archiveArtifacts artifacts: 'BS-PM-2025-TEAM27/frontend/dist/**', fingerprint: true
       }
     }
   }
 
   post {
     success {
-      echo '✅ Build successful!'
+      echo "✅ Build successful!"
     }
     failure {
-      echo '❌ Build failed. Check the logs.'
-    }
-    always {
-      echo '🧹 Pipeline finished.'
+      echo "❌ Build failed. Check the logs."
     }
   }
 }
