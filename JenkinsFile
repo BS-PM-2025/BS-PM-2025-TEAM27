@@ -4,6 +4,7 @@ pipeline {
   environment {
     NODE_VERSION = 'v18.19.1'
     NODE_DIR = 'local_node'
+    NODE_BIN = 'local_node/bin'
   }
 
   stages {
@@ -52,10 +53,7 @@ pipeline {
       steps {
         dir('frontend') {
           echo '📦 Installing frontend dependencies...'
-          sh '''
-            export PATH=../${NODE_DIR}/bin:$PATH
-            npm install
-          '''
+          sh '../${NODE_BIN}/npm install'
         }
       }
     }
@@ -64,10 +62,7 @@ pipeline {
       steps {
         dir('frontend') {
           echo '🔧 Building frontend...'
-          sh '''
-            export PATH=../${NODE_DIR}/bin:$PATH
-            npm run build
-          '''
+          sh '../${NODE_BIN}/npm run build'
         }
       }
     }
@@ -85,7 +80,7 @@ pipeline {
       echo '✅ Build successful!'
     }
     failure {
-      echo '❌ Build failed. See above logs.'
+      echo '❌ Build failed. See logs above.'
     }
     always {
       echo '🧹 Pipeline finished.'
