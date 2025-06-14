@@ -15,7 +15,7 @@ pipeline {
       }
     }
 
-    stage('Install Python Deps') {
+    stage('Install Python Dependencies') {
       steps {
         echo '🐍 Installing backend dependencies...'
         sh '''
@@ -28,11 +28,13 @@ pipeline {
     stage('Run Backend Tests') {
       steps {
         echo '🧪 Running backend unit tests...'
-        sh 'python manage.py test accounts --settings=backend.settings'
+        sh '''
+          python manage.py test accounts --settings=backend.settings
+        '''
       }
     }
 
-    stage('Install Frontend Deps') {
+    stage('Install Frontend Dependencies') {
       steps {
         dir('frontend') {
           echo '📦 Installing frontend dependencies...'
@@ -44,7 +46,7 @@ pipeline {
     stage('Build Frontend') {
       steps {
         dir('frontend') {
-          echo '🛠️ Building frontend...'
+          echo '🔧 Building frontend...'
           sh 'npm run build'
         }
       }
@@ -52,7 +54,7 @@ pipeline {
 
     stage('Archive Frontend Build') {
       steps {
-        echo '🗂️ Archiving frontend artifacts...'
+        echo '🗃️ Archiving frontend build...'
         archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
@@ -60,10 +62,10 @@ pipeline {
 
   post {
     success {
-      echo '✅ All stages passed. Build successful!'
+      echo '✅ All stages completed successfully!'
     }
     failure {
-      echo '❌ Build failed. Check logs.'
+      echo '❌ Build failed. Please check logs.'
     }
     always {
       echo '🧹 Cleaning up workspace...'
