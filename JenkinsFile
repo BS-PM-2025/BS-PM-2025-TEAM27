@@ -17,8 +17,9 @@ pipeline {
 
     stage('Backend Setup') {
       steps {
+        echo '🐍 Setting up Python virtual environment...'
         sh '''
-          /usr/bin/python3.11 -m venv venv
+          python3 -m venv venv
           . venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
@@ -28,6 +29,7 @@ pipeline {
 
     stage('Run Backend Tests') {
       steps {
+        echo '🧪 Running Django unit tests...'
         sh '''
           . venv/bin/activate
           python manage.py test
@@ -38,6 +40,7 @@ pipeline {
     stage('Frontend Setup') {
       steps {
         dir('frontend') {
+          echo '📦 Installing frontend dependencies...'
           sh 'npm install'
         }
       }
@@ -46,6 +49,7 @@ pipeline {
     stage('Build Frontend') {
       steps {
         dir('frontend') {
+          echo '🔧 Building React frontend...'
           sh 'npm run build'
         }
       }
@@ -53,6 +57,7 @@ pipeline {
 
     stage('Archive Build') {
       steps {
+        echo '🗃️ Archiving built frontend...'
         archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
@@ -60,13 +65,13 @@ pipeline {
 
   post {
     always {
-      echo '🧹 Cleaning up...'
+      echo '🧹 Cleaning up workspace...'
     }
     success {
       echo '✅ Build and tests passed!'
     }
     failure {
-      echo '❌ Build failed. Check the logs.'
+      echo '❌ Build failed. Check logs above.'
     }
   }
 }
