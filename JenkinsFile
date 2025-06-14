@@ -1,6 +1,11 @@
 pipeline {
   agent any
 
+  environment {
+    NODE_VERSION = 'v18.19.1'
+    NODE_DIR = 'local_node'
+  }
+
   stages {
     stage('Checkout') {
       steps {
@@ -10,7 +15,7 @@ pipeline {
 
     stage('Check Workspace') {
       steps {
-        echo '📂 Listing workspace files...'
+        echo '📂 Workspace contents:'
         sh 'ls -la'
       }
     }
@@ -25,11 +30,20 @@ pipeline {
       }
     }
 
-    stage('Run Django Tests') {
+    stage('Run Backend Tests') {
       steps {
         echo '🧪 Running Django unit tests...'
+        sh 'python3 manage.py test accounts --settings=backend.settings'
+      }
+    }
+
+    stage('Setup Node Locally') {
+      steps {
+        echo '⬇️ Downloading Node.js locally...'
         sh '''
-          python3 manage.py test accounts --settings=backend.settings
+          curl -O https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz
+          tar -xf node-${NODE_VERSION}-linux-x64.tar.xz
+          mv node-${NODE_VERSION}-linux-x64 $NODE_DIR
         '''
       }
     }
@@ -38,7 +52,9 @@ pipeline {
       steps {
         dir('frontend') {
           echo '📦 Installing frontend dependencies...'
-          sh '/usr/bin/npm install'
+          sh '''
+            ../$NODE_DIR/bin/npm install
+          '''
         }
       }
     }
@@ -46,15 +62,17 @@ pipeline {
     stage('Build Frontend') {
       steps {
         dir('frontend') {
-          echo '🛠️ Building frontend...'
-          sh '/usr/bin/npm run build'
+          echo '🔧 Building frontend...'
+          sh '''
+            ../$NODE_DIR/bin/npm run build
+          '''
         }
       }
     }
 
     stage('Archive Frontend Build') {
       steps {
-        echo '🗂️ Archiving frontend artifacts...'
+        echo '🗃️ Archiving frontend build...'
         archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
@@ -62,13 +80,13 @@ pipeline {
 
   post {
     success {
-      echo '✅ Build and test pipeline completed successfully!'
+      echo '✅ Build successful!'
     }
     failure {
-      echo '❌ Build failed. Check logs for errors.'
+      echo '❌ Build failed. See above logs.'
     }
     always {
-      echo '🧹 Finished pipeline execution.'
+      echo '🧹 Pipeline finished.'
     }
   }
 }
