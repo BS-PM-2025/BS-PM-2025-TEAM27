@@ -1,11 +1,6 @@
 pipeline {
   agent any
 
-  environment {
-    DJANGO_SECRET_KEY = credentials('django-secret-key')
-    //REACT_APP_WEATHER_API_KEY = credentials('react-weather-api')
-  }
-
   stages {
     stage('Checkout') {
       steps {
