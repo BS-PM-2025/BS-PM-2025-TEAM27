@@ -8,21 +8,19 @@ pipeline {
       }
     }
 
-    stage('Check Workspace Structure') {
+    stage('Check Workspace') {
       steps {
         echo '📂 Workspace contents:'
         sh 'ls -R'
       }
     }
 
-    stage('Backend Setup') {
+    stage('Install Python Deps') {
       steps {
-        echo '🐍 Setting up virtual environment and installing backend dependencies...'
-        sh '''#!/bin/bash
-          python3 -m venv venv
-          source venv/bin/activate
+        echo '🐍 Installing backend dependencies...'
+        sh '''
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
         '''
       }
     }
@@ -30,14 +28,11 @@ pipeline {
     stage('Run Backend Tests') {
       steps {
         echo '🧪 Running backend unit tests...'
-        sh '''#!/bin/bash
-          source venv/bin/activate
-          python manage.py test
-        '''
+        sh 'python manage.py test accounts --settings=backend.settings'
       }
     }
 
-    stage('Frontend Setup') {
+    stage('Install Frontend Deps') {
       steps {
         dir('frontend') {
           echo '📦 Installing frontend dependencies...'
@@ -49,7 +44,7 @@ pipeline {
     stage('Build Frontend') {
       steps {
         dir('frontend') {
-          echo '🔧 Building React frontend...'
+          echo '🛠️ Building frontend...'
           sh 'npm run build'
         }
       }
@@ -57,21 +52,21 @@ pipeline {
 
     stage('Archive Frontend Build') {
       steps {
-        echo '🗃️ Archiving built frontend files...'
+        echo '🗂️ Archiving frontend artifacts...'
         archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
   }
 
   post {
-    always {
-      echo '🧹 Cleaning up workspace...'
-    }
     success {
-      echo '✅ All stages completed successfully!'
+      echo '✅ All stages passed. Build successful!'
     }
     failure {
-      echo '❌ Build failed. Check logs above for details.'
+      echo '❌ Build failed. Check logs.'
+    }
+    always {
+      echo '🧹 Cleaning up workspace...'
     }
   }
 }
