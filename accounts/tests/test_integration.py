@@ -1,16 +1,15 @@
 from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
+from ..models import BusinessProfile, VisitorProfile, ContactMessage, Post, Sale, FavoriteSale, Offer, OfferRedemption, SiteRating
 from django.contrib.auth import get_user_model
-from accounts.models import BusinessProfile, VisitorProfile, ContactMessage, Post, Sale, FavoriteSale, Offer, OfferRedemption, SiteRating
-from datetime import datetime, timedelta
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
-from django.core import mail
 from django.utils import timezone
+from datetime import datetime, timedelta
 
 User = get_user_model()
+
 
 class AccountsIntegrationTests(APITestCase):
     def setUp(self):
