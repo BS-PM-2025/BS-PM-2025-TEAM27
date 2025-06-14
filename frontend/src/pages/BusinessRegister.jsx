@@ -1,28 +1,21 @@
 import React, { useState } from "react";
 import {
-  Box, TextField, Button, Checkbox, FormControlLabel, Typography, Snackbar, Alert, MenuItem
+  Box, TextField, Button, Checkbox, FormControlLabel,
+  Typography, Snackbar, Alert, MenuItem
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import Logo from "../assets/logo-jaffa.png";
 
 const BusinessRegister = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [error, setError] = useState("");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "error" });
 
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    password2: "",
-    business_name: "",
-    category: "",
-    custom_category: "",
-    description: "",
-    phone: "",
-    location: "",
-    is_in_jaffa: true,
+    username: "", email: "", password: "", password2: "",
+    business_name: "", category: "", custom_category: "",
+    description: "", phone: "", location: "", is_in_jaffa: true,
   });
 
   const handleChange = (e) => {
@@ -78,6 +71,8 @@ const BusinessRegister = () => {
     }
   };
 
+  const direction = i18n.language === "ar" || i18n.language === "he" ? "rtl" : "ltr";
+
   return (
     <Box
       sx={{
@@ -89,20 +84,35 @@ const BusinessRegister = () => {
         alignItems: "center",
         justifyContent: "center",
         p: 2,
+        direction: direction,
       }}
     >
       <Box
         sx={{
           maxWidth: 500,
           width: "100%",
-          backgroundColor: "rgba(44, 47, 56, 0.9)",
+          backgroundColor: "#fff",
           p: 4,
-          borderRadius: 3,
-          color: "#fff",
-          boxShadow: 5,
+          borderRadius: 6,
+          textAlign: "center",
+          color: "#1976d2",
+          boxShadow: 6,
         }}
       >
-        <Typography variant="h5" mb={3}>
+        <Box
+  mb={2}
+  sx={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <img src={Logo} alt="Jaffa Logo" style={{ height: 80, marginBottom: 6 }} />
+</Box>
+
+
+        <Typography variant="h5" fontWeight="bold" mb={2}>
           {t("auth.registerBusiness")}
         </Typography>
 
@@ -111,19 +121,21 @@ const BusinessRegister = () => {
             <TextField
               key={name}
               name={name}
-              type={name === "email" ? "email" : "text"}
-              label={t(`${name}`) || name}
+              label={t(name) || name}
               value={formData[name]}
               onChange={handleChange}
-              fullWidth
               required
+              fullWidth
               margin="normal"
-              InputLabelProps={{ style: { color: "#ccc" } }}
-              InputProps={{ style: { color: "#fff" } }}
+              InputLabelProps={{ style: { color: "#1976d2" } }}
+              InputProps={{
+                style: { borderRadius: 25, color: "#000", paddingLeft: 12 },
+              }}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "#555" },
-                  "&:hover fieldset": { borderColor: "#888" },
+                  "& fieldset": { borderColor: "#1976d2" },
+                  "&:hover fieldset": { borderColor: "#1565c0" },
+                  "&.Mui-focused fieldset": { borderColor: "#0d47a1" },
                 },
               }}
             />
@@ -135,39 +147,45 @@ const BusinessRegister = () => {
             label={t("category") || "Category"}
             value={formData.category}
             onChange={handleChange}
-            fullWidth
             required
+            fullWidth
             margin="normal"
-            InputLabelProps={{ style: { color: "#ccc" } }}
-            InputProps={{ style: { color: "#fff" } }}
+            InputLabelProps={{ style: { color: "#1976d2" } }}
+            InputProps={{
+              style: { borderRadius: 25, color: "#000", paddingLeft: 12 },
+            }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                "& fieldset": { borderColor: "#555" },
-                "&:hover fieldset": { borderColor: "#888" },
+                "& fieldset": { borderColor: "#1976d2" },
+                "&:hover fieldset": { borderColor: "#1565c0" },
+                "&.Mui-focused fieldset": { borderColor: "#0d47a1" },
               },
             }}
           >
-            <MenuItem value="restaurant">Restaurant</MenuItem>
-            <MenuItem value="attractions">Attractions</MenuItem>
-            <MenuItem value="shop">Shop</MenuItem>
-            <MenuItem value="other">Other</MenuItem>
+            <MenuItem value="restaurant">{t("restaurant") || "Restaurant"}</MenuItem>
+            <MenuItem value="attractions">{t("attractions") || "Attractions"}</MenuItem>
+            <MenuItem value="shop">{t("shop") || "Shop"}</MenuItem>
+            <MenuItem value="other">{t("other") || "Other"}</MenuItem>
           </TextField>
 
           {formData.category === "other" && (
             <TextField
               name="custom_category"
-              label="Enter Custom Category"
-              value={formData.custom_category ?? ""}
+              label={t("customCategory") || "Custom Category"}
+              value={formData.custom_category}
               onChange={handleChange}
-              fullWidth
               required
+              fullWidth
               margin="normal"
-              InputLabelProps={{ style: { color: "#ccc" } }}
-              InputProps={{ style: { color: "#fff" } }}
+              InputLabelProps={{ style: { color: "#1976d2" } }}
+              InputProps={{
+                style: { borderRadius: 25, color: "#000", paddingLeft: 12 },
+              }}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "#555" },
-                  "&:hover fieldset": { borderColor: "#888" },
+                  "& fieldset": { borderColor: "#1976d2" },
+                  "&:hover fieldset": { borderColor: "#1565c0" },
+                  "&.Mui-focused fieldset": { borderColor: "#0d47a1" },
                 },
               }}
             />
@@ -177,19 +195,22 @@ const BusinessRegister = () => {
             <TextField
               key={name}
               name={name}
+              label={t(name) || name}
               type={name.includes("password") ? "password" : "text"}
-              label={t(`${name}`) || name}
               value={formData[name]}
               onChange={handleChange}
-              fullWidth
               required
+              fullWidth
               margin="normal"
-              InputLabelProps={{ style: { color: "#ccc" } }}
-              InputProps={{ style: { color: "#fff" } }}
+              InputLabelProps={{ style: { color: "#1976d2" } }}
+              InputProps={{
+                style: { borderRadius: 25, color: "#000", paddingLeft: 12 },
+              }}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "#555" },
-                  "&:hover fieldset": { borderColor: "#888" },
+                  "& fieldset": { borderColor: "#1976d2" },
+                  "&:hover fieldset": { borderColor: "#1565c0" },
+                  "&.Mui-focused fieldset": { borderColor: "#0d47a1" },
                 },
               }}
             />
@@ -201,13 +222,24 @@ const BusinessRegister = () => {
                 name="is_in_jaffa"
                 checked={formData.is_in_jaffa}
                 onChange={handleChange}
-                sx={{ color: "#ccc" }}
+                sx={{ color: "#1976d2" }}
               />
             }
-            label={<span style={{ color: "#ccc" }}>My business is in Jaffa</span>}
+            label={<span style={{ color: "#1976d2" }}>{t("inJaffa") || "My business is in Jaffa"}</span>}
+            sx={{ display: "block", textAlign: "left", mt: 1 }}
           />
 
-          <Button type="submit" variant="contained" fullWidth sx={{ mt: 3, backgroundColor: "#1976d2" }}>
+          <Button
+            type="submit"
+            variant="contained"
+            fullWidth
+            sx={{
+              mt: 3,
+              borderRadius: 25,
+              backgroundColor: "#1976d2",
+              fontWeight: "bold",
+            }}
+          >
             {t("auth.register")}
           </Button>
         </form>

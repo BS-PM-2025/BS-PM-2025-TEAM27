@@ -47,7 +47,10 @@ const EditPost = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+<div
+  className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: "url('/images/bg3.jpg')" }}
+>
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Edit Post</h2>
 

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Rating, TextField, Button } from "@mui/material";
+import { Rating, TextField, Button, Snackbar, Alert, Box, Typography } from "@mui/material";
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8000"; 
+const BASE_URL = "http://localhost:8000";
 
 const RateSite = () => {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [ratingId, setRatingId] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
 
   const getToken = () =>
     localStorage.getItem("visitorAccessToken") ||
@@ -30,9 +31,7 @@ const RateSite = () => {
         setSubmitted(true);
       }
     } catch (err) {
-      if (err.response?.status === 401) {
-        console.warn("Unauthorized: Please log in.");
-      } else if (err.response?.status !== 404 && err.response?.status !== 204) {
+      if (![401, 404, 204].includes(err.response?.status)) {
         console.error("Failed to fetch rating:", err);
       }
     }
@@ -41,7 +40,7 @@ const RateSite = () => {
   const submitRating = async () => {
     const token = getToken();
     if (!token) {
-      alert("You must be logged in to rate.");
+      setSnackbar({ open: true, message: "You must be logged in to rate.", severity: "error" });
       return;
     }
 
@@ -63,9 +62,11 @@ const RateSite = () => {
         if (res.data?.id) {
           setRatingId(res.data.id);
         }
+        setSnackbar({ open: true, message: "Thanks for your feedback!", severity: "success" });
       }
     } catch (err) {
       console.error("Error submitting rating:", err);
+      setSnackbar({ open: true, message: "Failed to submit rating.", severity: "error" });
     }
   };
 
@@ -74,34 +75,84 @@ const RateSite = () => {
   }, []);
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow w-full max-w-md mx-auto">
-      <h2 className="text-xl font-semibold mb-4">Rate Our Site</h2>
-      <Rating
-        name="site-rating"
-        value={rating}
-        onChange={(e, newValue) => setRating(newValue)}
-        disabled={submitted}
-      />
-      <TextField
-        label="Leave a comment (optional)"
-        multiline
-        fullWidth
-        rows={3}
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        disabled={submitted}
-        className="my-4"
-      />
-      {!submitted && (
-        <Button variant="contained" color="primary" onClick={submitRating}>
-          Submit
-        </Button>
-      )}
-      {submitted && (
-        <p className="text-green-600 mt-2">Thanks for your feedback!</p>
-      )}
-    </div>
-  );
+    <Box
+      sx={{
+        minHeight: "100vh",
+        backgroundImage: "url('/images/bg4.jpg')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 2,
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: 500,
+          width: "100%",
+          backgroundColor: "rgba(44,47,56, 0.95)",
+          p: 4,
+          borderRadius: 3,
+          boxShadow: 6,
+        }}
+      >
+        <Typography variant="h4" gutterBottom color="#fff" fontWeight="bold">
+          Rate Our Site
+        </Typography>
 
+        <Typography variant="body1" color="gray" mb={2}>
+          We'd love your feedback! ⭐
+        </Typography>
+
+        <Rating
+          name="site-rating"
+          value={rating}
+          onChange={(e, newValue) => setRating(newValue)}
+          disabled={submitted}
+          size="large"
+        />
+
+        <TextField
+          label="Leave a comment (optional)"
+          multiline
+          fullWidth
+          rows={3}
+          value={comment}
+          onChange={(e) => setComment(e.target.value)}
+          disabled={submitted}
+          sx={{
+            mt: 3,
+            mb: 2,
+            input: { color: "#000" },
+            label: { color: "#ccc" },
+            '& .MuiOutlinedInput-root': {
+              '& fieldset': { borderColor: '#666' },
+              '&:hover fieldset': { borderColor: '#999' },
+              '&.Mui-focused fieldset': { borderColor: '#1976d2' },
+            },
+          }}
+        />
+
+        {!submitted && (
+          <Button variant="contained" color="primary" fullWidth onClick={submitRating}>
+            Submit Rating
+          </Button>
+        )}
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={5000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+        >
+          <Alert severity={snackbar.severity} sx={{ width: "100%" }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </Box>
+  );
 };
+
 export default RateSite;

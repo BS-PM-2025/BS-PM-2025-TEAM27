@@ -8,9 +8,22 @@ const CreatePost = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  const refreshTokens = async () => {
+    const token = localStorage.getItem('visitorAccessToken');
+    try {
+      const res = await axios.get("http://localhost:8000/api/profile/visitor/", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      localStorage.setItem("visitorTokens", res.data.tokens);
+      window.dispatchEvent(new Event("tokensUpdated"));
+    } catch (err) {
+      console.error("❌ Error refreshing tokens:", err);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('visitorAccessToken') || localStorage.getItem('access');
+    const token = localStorage.getItem('visitorAccessToken');
     if (!token) {
       setError('You must be logged in to post.');
       return;
@@ -27,14 +40,20 @@ const CreatePost = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      navigate('/feed');
+
+      await refreshTokens();         
+      navigate('/feed');            
     } catch (err) {
+      console.error("❌ Post failed:", err);
       setError('Failed to create post.');
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+<div
+  className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: "url('/images/bg3.jpg')" }}
+>
       <form onSubmit={handleSubmit} className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Create Post</h2>
 

@@ -4,9 +4,10 @@ import {
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import Logo from "../assets/logo-jaffa.png"; 
 
 const VisitorRegister = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -25,7 +26,6 @@ const VisitorRegister = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (formData.password !== formData.password2) {
       setSnackbar({
         open: true,
@@ -67,6 +67,8 @@ const VisitorRegister = () => {
     }
   };
 
+  const direction = i18n.language === "ar" || i18n.language === "he" ? "rtl" : "ltr";
+
   return (
     <Box
       sx={{
@@ -78,20 +80,35 @@ const VisitorRegister = () => {
         alignItems: "center",
         justifyContent: "center",
         p: 2,
+        direction: direction,
       }}
     >
       <Box
         sx={{
-          maxWidth: 450,
           width: "100%",
-          backgroundColor: "rgba(44, 47, 56, 0.9)",
+          maxWidth: 450,
+          backgroundColor: "#fff",
           p: 4,
-          borderRadius: 3,
-          color: "#fff",
+          borderRadius: 6,
           boxShadow: 6,
+          textAlign: "center",
+          color: "#1976d2",
         }}
       >
-        <Typography variant="h5" mb={3}>
+        <Box
+  mb={2}
+  sx={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }}
+>
+  <img src={Logo} alt="Jaffa Logo" style={{ height: 80, marginBottom: 6 }} />
+</Box>
+
+
+        <Typography variant="h5" fontWeight="bold" mb={2}>
           {t("auth.registerVisitor")}
         </Typography>
 
@@ -113,12 +130,16 @@ const VisitorRegister = () => {
               required
               fullWidth
               margin="normal"
-              InputLabelProps={{ style: { color: "#ccc" } }}
-              InputProps={{ style: { color: "#fff" } }}
+              variant="outlined"
+              InputLabelProps={{ style: { color: "#1976d2" } }}
+              InputProps={{
+                style: { color: "#000", borderRadius: 25, paddingLeft: 12 },
+              }}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  "& fieldset": { borderColor: "#555" },
-                  "&:hover fieldset": { borderColor: "#888" },
+                  "& fieldset": { borderColor: "#1976d2" },
+                  "&:hover fieldset": { borderColor: "#1565c0" },
+                  "&.Mui-focused fieldset": { borderColor: "#0d47a1" },
                 },
               }}
             />
@@ -128,7 +149,12 @@ const VisitorRegister = () => {
             type="submit"
             variant="contained"
             fullWidth
-            sx={{ mt: 2, backgroundColor: "#1976d2" }}
+            sx={{
+              mt: 3,
+              borderRadius: 25,
+              backgroundColor: "#1976d2",
+              fontWeight: "bold",
+            }}
           >
             {t("auth.register")}
           </Button>

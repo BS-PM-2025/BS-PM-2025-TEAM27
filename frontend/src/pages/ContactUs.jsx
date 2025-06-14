@@ -48,7 +48,10 @@ const ContactUs = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-100 to-blue-100">
+<div
+  className="flex items-center justify-center min-h-screen bg-cover bg-center bg-no-repeat"
+  style={{ backgroundImage: "url('/images/bg2.jpg')" }}
+>
       <div className="bg-white shadow-xl rounded-2xl p-10 w-full max-w-xl transition-transform animate-fade-in">
         <h2 className="text-4xl font-bold text-center mb-6 text-blue-700 drop-shadow-sm">צור קשר</h2>
 
