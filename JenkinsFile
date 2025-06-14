@@ -42,6 +42,7 @@ pipeline {
       steps {
         echo '⬇️ Downloading Node.js locally...'
         sh '''
+          rm -rf ${NODE_DIR} node-${NODE_VERSION}-linux-x64
           curl -O https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz
           tar -xf node-${NODE_VERSION}-linux-x64.tar.xz
           mv node-${NODE_VERSION}-linux-x64 ${NODE_DIR}
