@@ -4,7 +4,7 @@ pipeline {
   environment {
     NODE_VERSION = 'v18.19.1'
     NODE_DIR = 'local_node'
-    NODE_BIN = 'local_node/bin'
+    NODE_BIN = "${NODE_DIR}/bin"
   }
 
   stages {
@@ -54,7 +54,10 @@ pipeline {
       steps {
         dir('frontend') {
           echo '📦 Installing frontend dependencies...'
-          sh '../${NODE_BIN}/npm install'
+          sh '''
+            export PATH=../${NODE_BIN}:$PATH
+            npm install
+          '''
         }
       }
     }
@@ -63,7 +66,10 @@ pipeline {
       steps {
         dir('frontend') {
           echo '🔧 Building frontend...'
-          sh '../${NODE_BIN}/npm run build'
+          sh '''
+            export PATH=../${NODE_BIN}:$PATH
+            npm run build
+          '''
         }
       }
     }
