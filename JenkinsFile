@@ -1,6 +1,11 @@
 pipeline {
   agent any
 
+  environment {
+    DJANGO_SECRET_KEY = credentials('django-secret-key')
+    REACT_APP_WEATHER_API_KEY = credentials('react-weather-api')
+  }
+
   stages {
     stage('Checkout') {
       steps {
@@ -10,14 +15,14 @@ pipeline {
 
     stage('Check Workspace Structure') {
       steps {
-        echo '📂 Printing workspace structure...'
+        echo '📂 Workspace contents:'
         sh 'ls -R'
       }
     }
 
     stage('Backend Setup') {
       steps {
-        echo '🐍 Setting up Python virtual environment...'
+        echo '🐍 Setting up virtual environment and installing backend dependencies...'
         sh '''#!/bin/bash
           python3 -m venv venv
           source venv/bin/activate
@@ -29,7 +34,7 @@ pipeline {
 
     stage('Run Backend Tests') {
       steps {
-        echo '🧪 Running Django unit tests...'
+        echo '🧪 Running backend unit tests...'
         sh '''#!/bin/bash
           source venv/bin/activate
           python manage.py test
@@ -55,9 +60,9 @@ pipeline {
       }
     }
 
-    stage('Archive Build') {
+    stage('Archive Frontend Build') {
       steps {
-        echo '🗃️ Archiving built frontend...'
+        echo '🗃️ Archiving built frontend files...'
         archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
@@ -68,10 +73,10 @@ pipeline {
       echo '🧹 Cleaning up workspace...'
     }
     success {
-      echo '✅ Build and tests passed!'
+      echo '✅ All stages completed successfully!'
     }
     failure {
-      echo '❌ Build failed. Check logs above.'
+      echo '❌ Build failed. Check logs above for details.'
     }
   }
 }
