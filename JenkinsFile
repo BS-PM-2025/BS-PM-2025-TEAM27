@@ -13,35 +13,37 @@ pipeline {
       }
     }
 
+    stage('Check Workspace Structure') {
+      steps {
+        echo '📂 Printing workspace structure...'
+        sh 'ls -R'
+      }
+    }
+
     stage('Backend Setup') {
       steps {
-        dir('backend') {
-          sh '''
-            python -m venv venv
-            . venv/bin/activate
-            pip install -r requirements.txt
-          '''
-        }
+        sh '''
+          python3 -m venv venv
+          . venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+        '''
+      }
+    }
+
+    stage('Run Backend Tests') {
+      steps {
+        sh '''
+          . venv/bin/activate
+          python manage.py test
+        '''
       }
     }
 
     stage('Frontend Setup') {
       steps {
         dir('frontend') {
-          sh '''
-            npm install
-          '''
-        }
-      }
-    }
-
-    stage('Run Backend Tests') {
-      steps {
-        dir('backend') {
-          sh '''
-            . venv/bin/activate
-            python manage.py test
-          '''
+          sh 'npm install'
         }
       }
     }
@@ -54,22 +56,22 @@ pipeline {
       }
     }
 
-    stage('Deploy or Archive') {
+    stage('Archive Build') {
       steps {
-        archiveArtifacts artifacts: '**/build/**', allowEmptyArchive: true
+        archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
   }
 
   post {
     always {
-      echo 'Cleaning up...'
+      echo '🧹 Cleaning up...'
     }
     success {
-      echo 'Build and tests passed!'
+      echo '✅ Build and tests passed!'
     }
     failure {
-      echo 'Something failed. Check logs.'
+      echo '❌ Build failed. Check the logs.'
     }
   }
 }
