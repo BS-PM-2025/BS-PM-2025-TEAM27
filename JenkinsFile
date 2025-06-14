@@ -43,7 +43,7 @@ pipeline {
         sh '''
           curl -O https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz
           tar -xf node-${NODE_VERSION}-linux-x64.tar.xz
-          mv node-${NODE_VERSION}-linux-x64 $NODE_DIR
+          mv node-${NODE_VERSION}-linux-x64 ${NODE_DIR}
         '''
       }
     }
@@ -53,7 +53,8 @@ pipeline {
         dir('frontend') {
           echo '📦 Installing frontend dependencies...'
           sh '''
-            ../$NODE_DIR/bin/npm install
+            export PATH=../${NODE_DIR}/bin:$PATH
+            npm install
           '''
         }
       }
@@ -64,7 +65,8 @@ pipeline {
         dir('frontend') {
           echo '🔧 Building frontend...'
           sh '''
-            ../$NODE_DIR/bin/npm run build
+            export PATH=../${NODE_DIR}/bin:$PATH
+            npm run build
           '''
         }
       }
