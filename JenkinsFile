@@ -60,6 +60,15 @@ pipeline {
         }
       }
     }
+    
+    stage('Install MUI Icons') {
+      steps {
+        echo "🎨 Installing MUI icons..."
+        dir('frontend') {
+          sh 'npm install @mui/icons-material'
+        }
+      }
+    }
 
     stage('Build Frontend') {
       steps {
