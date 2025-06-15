@@ -6,7 +6,9 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 import random
 
-
+class Meta:
+    app_label = 'accounts'
+    
 class User(AbstractUser):
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150)
