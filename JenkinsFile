@@ -60,12 +60,21 @@ pipeline {
         }
       }
     }
-    
+
     stage('Install MUI Icons') {
       steps {
         echo "🎨 Installing MUI icons..."
         dir('frontend') {
           sh 'npm install @mui/icons-material'
+        }
+      }
+    }
+
+    stage('Install html2canvas') {
+      steps {
+        echo '🖼️ Installing html2canvas...'
+        dir('frontend') {
+          sh 'npm install html2canvas'
         }
       }
     }
