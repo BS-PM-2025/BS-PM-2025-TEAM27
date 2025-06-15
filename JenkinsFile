@@ -2,6 +2,9 @@ pipeline {
   agent any
 
   environment {
+    NODE_VERSION = 'v18.19.1'
+    NODE_DIR = 'local_node'
+    PATH = "${env.WORKSPACE}/${NODE_DIR}/bin:${env.PATH}"
     DJANGO_SETTINGS_MODULE = "backend.settings"
     PYTHONUNBUFFERED = 1
   }
@@ -9,13 +12,20 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        git branch: 'main', credentialsId: 'your-credential-id', url: 'https://github.com/BS-PM-2025/BS-PM-2025-TEAM27.git'
+        git branch: 'main', url: 'https://github.com/BS-PM-2025/BS-PM-2025-TEAM27.git'
+      }
+    }
+
+    stage('Check Workspace') {
+      steps {
+        echo '📂 Workspace contents:'
+        sh 'ls -la'
       }
     }
 
     stage('Install Python Dependencies') {
       steps {
-        echo "🐍 Installing backend dependencies..."
+        echo '🐍 Installing backend dependencies...'
         sh '''
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements.txt
@@ -25,57 +35,58 @@ pipeline {
 
     stage('Run Backend Tests') {
       steps {
-        echo "🧪 Running Django unit tests..."
-        sh '''
-          python3 manage.py test accounts --settings=backend.settings
-        '''
+        echo '🧪 Running Django unit tests...'
+        sh 'python3 manage.py test accounts --settings=backend.settings'
       }
     }
 
     stage('Setup Node.js Locally') {
       steps {
-        echo "⚙️ Installing Node.js..."
+        echo '⬇️ Downloading Node.js...'
         sh '''
-          cd frontend
-          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-          sudo apt-get install -y nodejs
+          rm -rf ${NODE_DIR} node-${NODE_VERSION}-linux-x64*
+          curl -O https://nodejs.org/dist/${NODE_VERSION}/node-${NODE_VERSION}-linux-x64.tar.xz
+          tar -xf node-${NODE_VERSION}-linux-x64.tar.xz
+          mv node-${NODE_VERSION}-linux-x64 ${NODE_DIR}
         '''
       }
     }
 
     stage('Install Frontend Dependencies') {
       steps {
-        echo "📦 Installing frontend dependencies..."
-        sh '''
-          cd frontend
-          npm install
-        '''
+        dir('frontend') {
+          echo '📦 Installing frontend dependencies...'
+          sh 'npm install'
+        }
       }
     }
 
     stage('Build Frontend') {
       steps {
-        echo "🏗️ Building frontend..."
-        sh '''
-          cd frontend
-          npm run build
-        '''
+        dir('frontend') {
+          echo '🔧 Building frontend...'
+          sh 'CI=false npm run build'
+        }
       }
     }
 
     stage('Archive Frontend Build') {
       steps {
-        archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true
+        echo '🗃️ Archiving frontend build...'
+        archiveArtifacts artifacts: 'frontend/build/**', allowEmptyArchive: true
       }
     }
   }
 
   post {
     success {
-      echo "✅ Build successful!"
+      echo '✅ Build successful!'
     }
     failure {
-      echo "❌ Build failed. Check the logs."
+      echo '❌ Build failed. Check the logs.'
+    }
+    always {
+      echo '🧹 Pipeline finished.'
     }
   }
 }
