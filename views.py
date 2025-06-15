@@ -27,6 +27,15 @@ from .serializers import BusinessProfileSerializer, GalleryImageSerializer, Sale
 from rest_framework import viewsets, permissions
 from django.conf import settings
 from .serializers import OfferSerializer, OfferRedemptionSerializer
+import os
+from dotenv import load_dotenv
+
+ENV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend', '.env')
+load_dotenv(dotenv_path=ENV_PATH)
+openai.api_key = os.getenv("OPENAI_API_KEY")
+if not openai.api_key:
+    raise Exception("❌ OPENAI_API_KEY is missing. Check the frontend/.env file path.")
+
 
 from .models import Post, Like, Comment, Report,FavoriteSale,SiteRating
 from .serializers import PostSerializer, LikeSerializer, CommentSerializer, ReportSerializer
