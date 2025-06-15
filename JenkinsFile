@@ -13,13 +13,6 @@ pipeline {
       }
     }
 
-    stage('Check .env') {
-      steps {
-        echo "📂 Verifying .env file presence..."
-        sh 'ls -la frontend/.env'
-      }
-    }
-
     stage('Install Python Dependencies') {
       steps {
         echo "🐍 Installing backend dependencies..."
