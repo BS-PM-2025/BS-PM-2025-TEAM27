@@ -7,7 +7,7 @@ from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.utils import timezone
 from datetime import datetime, timedelta
-
+import unittest
 User = get_user_model()
 
 
@@ -215,6 +215,8 @@ class AccountsIntegrationTests(APITestCase):
         res = self.client.get(reverse('my-site-rating'))
         self.assertIn(res.status_code, [200, 204, 404])
 
+
+    @unittest.skip("Skipping OpenAI test during Jenkins build")
     def test_yaffa_bot(self):
         res = self.client.post('/api/yaffabot/')
         self.assertEqual(res.status_code, 200)
