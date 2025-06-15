@@ -16,7 +16,10 @@ pipeline {
     stage('Check .env') {
       steps {
         echo "📂 Verifying .env file presence..."
-        sh 'ls -la .env'
+        sh '''
+          cd BS-PM-2025-TEAM27
+          ls -la frontend/.env
+        '''
       }
     }
 
@@ -24,6 +27,7 @@ pipeline {
       steps {
         echo "🐍 Installing backend dependencies..."
         sh '''
+          cd BS-PM-2025-TEAM27
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements.txt
         '''
@@ -34,6 +38,7 @@ pipeline {
       steps {
         echo "🧪 Running Django unit tests..."
         sh '''
+          cd BS-PM-2025-TEAM27
           python3 manage.py test accounts --settings=backend.settings
         '''
       }
@@ -43,7 +48,7 @@ pipeline {
       steps {
         echo "⚙️ Installing Node.js..."
         sh '''
-          cd frontend
+          cd BS-PM-2025-TEAM27/frontend
           curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
         '''
@@ -54,7 +59,7 @@ pipeline {
       steps {
         echo "📦 Installing frontend dependencies..."
         sh '''
-          cd frontend
+          cd BS-PM-2025-TEAM27/frontend
           npm install
         '''
       }
@@ -64,7 +69,7 @@ pipeline {
       steps {
         echo "🏗️ Building frontend..."
         sh '''
-          cd frontend
+          cd BS-PM-2025-TEAM27/frontend
           npm run build
         '''
       }
@@ -72,7 +77,7 @@ pipeline {
 
     stage('Archive Frontend Build') {
       steps {
-        archiveArtifacts artifacts: 'frontend/dist/**', fingerprint: true
+        archiveArtifacts artifacts: 'BS-PM-2025-TEAM27/frontend/dist/**', fingerprint: true
       }
     }
   }
