@@ -1,7 +1,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from rest_framework_simplejwt.tokens import RefreshToken
-from ..models import BusinessProfile, VisitorProfile, ContactMessage, Post, Sale, FavoriteSale, Offer, OfferRedemption, SiteRating
+from accounts.models import BusinessProfile, VisitorProfile, ContactMessage, Post, Sale, FavoriteSale, Offer, OfferRedemption, SiteRating
 from django.contrib.auth import get_user_model
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
