@@ -9,7 +9,7 @@ from accounts.models import Sale, ContactMessage, Post, FavoriteSale, BusinessPr
 
 User = get_user_model()
 
-class TestFunctionalViews(TestCase):
+class FunctionalViewTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
@@ -129,7 +129,7 @@ class TestFunctionalViews(TestCase):
         fav_response = self.client.get(fav_url)
         self.assertEqual(fav_response.status_code, 200)
 
-class TestAdminDeletePost(APITestCase):  
+class AdminDeletePostTest(APITestCase):
     def setUp(self):
         self.admin = User.objects.create_superuser(
             username='adminuser', email='admin@example.com', password='adminpass'
@@ -150,7 +150,7 @@ class TestAdminDeletePost(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data['detail'], 'Post not found.')
 
-class TestDeleteSale(APITestCase): 
+class DeleteSaleTest(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
             username='bizuser', email='biz@example.com', password='bizpass', is_business=True
